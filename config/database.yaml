@@ -1,0 +1,5 @@
+database_open: True
+mysql: 192.168.105.58:3306
+user: root
+password: root123456
+database: ruoyi
