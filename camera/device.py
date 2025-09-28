@@ -14,6 +14,7 @@ from task.detect_image import detectFrame
 
 # sys.path.append("./MVSDK")
 from camera.MVSDK.IMVApi import *
+import yaml
 
 device_dic = {'xy-01-01':'1面-1排',
               'xy-01-02':'1面-2排',
@@ -197,6 +198,8 @@ class CameraDevice():
                 return ret
 
         # ch:销毁句柄 | Destroy handle
+        if not self.obj_cam:
+            return IMV_ERROR
         self.obj_cam.IMV_DestroyHandle()
         self.b_open_device = False
         self.b_start_grabbing = False
@@ -335,6 +338,8 @@ class CameraDevice():
             # return IMV_OK
 
     def startGrabbing(self,winHandle):
+        if not self.obj_cam:
+            return IMV_ERROR
         if not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
         
@@ -360,6 +365,8 @@ class CameraDevice():
         
 
     def stopGrabbing(self):
+        if not self.obj_cam:
+            return IMV_ERROR
         if not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
         
@@ -577,6 +584,15 @@ class CameraDevice():
             return IMV_INVALID_HANDLE
         return self.cam.IMV_GetEnumFeatureSymbol(pFeatureName, pStringValue)
 
+def testCameras():
+    database_yaml = 'config/test-cameras.yaml'
+    with open(file=database_yaml, mode='r', encoding='utf-8') as f:
+        database_config = f.read()
+        yaml_data = yaml.load(stream=database_config, Loader=yaml.FullLoader)
+    cameras = yaml_data['cameras']
+
+    return cameras
+
 class DeviceSystem():
 
     def __init__(self):
@@ -595,13 +611,14 @@ class DeviceSystem():
             sys.exit()
         if deviceList.nDevNum == 0:
             print("find no device!")
-            sys.exit()
+            # sys.exit()
 
         self.m_DeviceNum = deviceList.nDevNum
         for i in range(0,deviceList.nDevNum):
             self.m_Device[i].init(i,deviceList.pDevInfo[i])
             self.m_DeviceStr.append(self.getDeviceInfo(i,deviceList.pDevInfo[i]))
 
+        self.m_DeviceStr.extend(testCameras())
         print("deviceList size is", deviceList.nDevNum)
         # displayDeviceInfo(deviceList)
 

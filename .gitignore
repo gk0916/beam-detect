@@ -1,0 +1,7 @@
+dataset/
+test-project/
+models/
+runs/
+test/
+wandb/
+*.pt

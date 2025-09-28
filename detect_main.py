@@ -129,7 +129,7 @@ if __name__ == "__main__":
         if not os.path.exists(f'{job}'):
             os.makedirs(f'{job}')
 
-        model_file = ui.ComboModels.currentText()
+        model_file = f'models/{ui.ComboModels.currentText()}' 
         detect_model = init_model(model=model_file)
 
         for cameraIndex in ui.ComboDevices.selected_items:
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         all_models = []
         for root,dirs,files in os.walk(model_path):
             for file in list(filter((lambda x: x.lower().endswith('.pt')),files)):
-                all_models.append(os.path.join(root,file))
+                all_models.append(file)
         return all_models
     
     # ch: 设置控件状态 | en:set enable status
@@ -232,13 +232,13 @@ if __name__ == "__main__":
         global isOpen
 
         # 先设置group的状态，再单独设置各控件状态
-        ui.groupDetect.setEnabled(isOpen)
+        # ui.groupDetect.setEnabled(isOpen)
         # ui.groupParam.setEnabled(isOpen)
 
         ui.bnOpen.setEnabled(not isOpen)
         ui.bnClose.setEnabled(isOpen and (not isDetecting))
 
-        ui.ComboModels.setEnabled(isOpen and (not isDetecting))
+        ui.ComboModels.setEnabled((not isOpen) or (not isDetecting))
         ui.bnStart.setEnabled(isOpen and (not isDetecting))
         ui.bnStop.setEnabled(isOpen and isDetecting)
         # ui.bnSoftwareTrigger.setEnabled(isDetecting and ui.radioTriggerMode.isChecked())

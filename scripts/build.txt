@@ -1,0 +1,28 @@
+nuitka --standalone --show-progress --show-memory  --plugin-enable=qt-plugins  --output-dir=out --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+
+
+nuitka --standalone --show-memory --show-progress --plugin-enable=qt-plugins --output-dir=out --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+nuitka --standalone --show-memory --show-progress --output-dir=out --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+nuitka --standalone --show-memory --show-progress --enable-plugin=qt-plugins --include-qt-plugins=sensible,styles --output-dir=out --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+
+
+
+--enable-plugin=qt-plugins --include-qt-plugins=sensible,styles
+
+nuitka --standalone --show-memory --show-progress --nofollow-imports --output-dir=out2 --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+
+
+
+
+nuitka --standalone --show-memory --show-progress --nofollow-imports --follow-import-to=camera,db,task,ui,util --output-dir=out3 --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
+
+
+nuitka detect_main.py ^
+  --standalone ^
+  --windows-disable-console ^
+  --plugin-enable=numpy,pyqt5,torch ^
+  --follow-import-to=task,camera ^
+  --output-dir=out ^
+  --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
+  --lto=yes
+  --jobs=8
