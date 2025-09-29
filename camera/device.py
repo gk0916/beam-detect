@@ -15,6 +15,7 @@ from task.detect_image import detectFrame
 # sys.path.append("./MVSDK")
 from camera.MVSDK.IMVApi import *
 import yaml
+import logging
 
 device_dic = {'xy-01-01':'1面-1排',
               'xy-01-02':'1面-2排',
@@ -39,8 +40,8 @@ def Stop_thread(thread):
     Async_raise(thread.ident, SystemExit)
 
 def displayDeviceInfo(deviceInfoList):
-    print("Idx  Type   Vendor              Model           S/N                 DeviceUserID    IP Address")
-    print("------------------------------------------------------------------------------------------------")
+    logging.info("Idx  Type   Vendor              Model           S/N                 DeviceUserID    IP Address")
+    logging.info("------------------------------------------------------------------------------------------------")
     for i in range(0,deviceInfoList.nDevNum):
         pDeviceInfo=deviceInfoList.pDevInfo[i]
         strType=""
@@ -53,7 +54,7 @@ def displayDeviceInfo(deviceInfoList):
             strType="Gige"
         elif pDeviceInfo.nCameraType == typeU3vCamera:
             strType="U3V"
-        print ("[%d]  %s   %s    %s      %s     %s           %s" % (i+1, strType,strVendorName,strModeName,strSerialNumber,strCameraname,strIpAdress))
+        logging.info ("[%d]  %s   %s    %s      %s     %s           %s" % (i+1, strType,strVendorName,strModeName,strSerialNumber,strCameraname,strIpAdress))
 
 class CameraDevice():
     def __init__(self
@@ -109,17 +110,17 @@ class CameraDevice():
             self.obj_cam = MvCamera()
             nRet = self.obj_cam.IMV_CreateHandle(IMV_ECreateHandleMode.modeByIndex, byref(c_void_p(self.m_index)))
             if IMV_OK != nRet:
-                print("Create devHandle failed! ErrorCode", nRet)
+                logging.error(f"Create devHandle failed! ErrorCode {nRet}")
                 return nRet
 
             # 打开相机
             nRet = self.obj_cam.IMV_Open()
             if IMV_OK != nRet:
-                print("Open devHandle failed! ErrorCode", nRet)
+                logging.error(f"Open devHandle failed! ErrorCode {nRet}")
                 self.obj_cam.IMV_DestroyHandle()
                 return nRet
             else:
-                print(f"open device[{self.m_index}] successfully!")
+                logging.info(f"open device[{self.m_index}] successfully!")
                 self.b_open_device = True
                 self.b_thread_closed = False
             return IMV_OK
@@ -129,17 +130,17 @@ class CameraDevice():
             self.obj_cam = MvCamera()
             nRet = self.obj_cam.IMV_CreateHandle(IMV_ECreateHandleMode.modeByCameraKey, self.m_Key)
             if IMV_OK != nRet:
-                print("Create devHandle failed! ErrorCode", nRet)
+                logging.error(f"Create devHandle failed! ErrorCode {nRet}")
                 return nRet
 
             # 打开相机
             nRet = self.obj_cam.IMV_Open()
             if IMV_OK != nRet:
-                print("Open devHandle failed! ErrorCode", nRet)
+                logging.error(f"Open devHandle failed! ErrorCode {nRet}")
                 self.obj_cam.IMV_DestroyHandle()
                 return nRet
             else:
-                print(f"open device[{self.m_index}] successfully!")
+                logging.info(f"open device[{self.m_index}] successfully!")
                 self.b_open_device = True
                 self.b_thread_closed = False
             return IMV_OK
@@ -148,13 +149,13 @@ class CameraDevice():
         #     self.obj_cam = MvCamera()
         #     nRet = self.obj_cam.IMV_CreateHandle(IMV_ECreateHandleMode.modeByCameraKey, self.m_Key)
         #     if IMV_OK != nRet:
-        #         print("Create devHandle by CameraKey failed! Key is [%s], ErrorCode[%d]", self.m_Key, nRet)
+        #         logging.error("Create devHandle by CameraKey failed! Key is [%s], ErrorCode[%d]", self.m_Key, nRet)
         #         sys.exit()
 
         #     # 打开相机
         #     nRet = self.obj_cam.IMV_Open()
         #     if IMV_OK != nRet:
-        #         print("Open devHandle failed! ErrorCode", nRet)
+        #         logging.error(f"Open devHandle failed! ErrorCode {nRet}")
         #         self.obj_cam.IMV_DestroyHandle()
         #     sys.exit()
 
@@ -164,13 +165,13 @@ class CameraDevice():
 
         nRet = self.cam.IMV_CreateHandle(IMV_ECreateHandleMode.modeByDeviceUserID, self.m_userId.encode("ascii"))
         if IMV_OK != nRet:
-            print("Create devHandle by device user id failed! User id is [%s], ErrorCode[%d]", self.m_userId, nRet)
+            logging.error("Create devHandle by device user id failed! User id is [%s], ErrorCode[%d]", self.m_userId, nRet)
             sys.exit()
 
         # 打开相机
         nRet = self.cam.IMV_Open()
         if IMV_OK != nRet:
-            print("Open devHandle failed! ErrorCode", nRet)
+            logging.error(f"Open devHandle failed! ErrorCode {nRet}")
             self.cam.IMV_DestroyHandle()
             sys.exit()
 
@@ -178,7 +179,7 @@ class CameraDevice():
         # # 关闭相机
         # nRet = self.cam.IMV_Close()
         # if IMV_OK != nRet:
-        #     print("Close camera failed! ErrorCode", nRet)
+        #     logging.error(f"Close camera failed! ErrorCode {nRet}")
         #     sys.exit()
 
         # # 销毁句柄
@@ -204,7 +205,7 @@ class CameraDevice():
         self.b_open_device = False
         self.b_start_grabbing = False
         # self.b_exit = True
-        print("close device successfully!")
+        logging.info("close device successfully!")
 
         return IMV_OK
     
@@ -239,7 +240,7 @@ class CameraDevice():
         
         # nRet = cam.IMV_ReleaseFrame(frame)
         # if IMV_OK != nRet:
-        #     print("Release frame failed! ErrorCode[%d]"% nRet)
+        #     logging.error(f"Release frame failed! ErrorCode[{nRet}]")
         #     sys.exit()
         
         # 如果图像格式是 Mono8 直接使用
@@ -260,7 +261,7 @@ class CameraDevice():
 
             nRet=cam.IMV_PixelConvert(stPixelConvertParam)
             if IMV_OK!=nRet:
-                print("image convert to failed! ErrorCode[%d]" % nRet)
+                logging.error(f"image convert to failed! ErrorCode[{nRet}]")
                 del pDstBuf
                 sys.exit()
             rgbBuff = c_buffer(b'\0', stPixelConvertParam.nDstBufSize)
@@ -286,15 +287,15 @@ class CameraDevice():
             while True:
                 ret = self.obj_cam.IMV_ExecuteCommandFeature("TriggerSoftware")
                 if ret != IMV_OK:
-                    print("Execute TriggerSoftware failed! ErrorCode:",ret)
+                    logging.error(f"Execute TriggerSoftware failed! ErrorCode: {nRet}")
                     continue
                 nRet = self.obj_cam.IMV_GetFrame(frame, 1000)
                 if IMV_OK != nRet:
-                    print(f'get fram failed with errorcode[{nRet}]')
+                    logging.error(f'get fram failed with errorcode[{nRet}]')
                     # break
                     continue
 
-                print("Get frame blockId = [%d]" % frame.frameInfo.blockId)
+                logging.info("Get frame blockId = [%d]" % frame.frameInfo.blockId)
                 # self.st_frame_info = frame.frameInfo
 
                 pic = winHandle
@@ -315,7 +316,7 @@ class CameraDevice():
                     count += 1
                     deviceName = device_dic[self.m_userId.decode('utf-8')]
                     fileName = f"{current_job}/{deviceName}-{count}张.jpg"
-                    print(f'picture image: [{fileName}]')
+                    logging.debug(f'picture image: [{fileName}]')
                     cv2.imencode('.jpg', cvImage)[1].tofile(fileName)
                     # self.image_queue.put((fileName,cvImage))
                     self.image_queue.put(fileName)
@@ -327,7 +328,7 @@ class CameraDevice():
                 # time.sleep(10)
                 nRet = self.obj_cam.IMV_ReleaseFrame(frame)
                 if IMV_OK != nRet:
-                    print("Release frame failed! ErrorCode[%d]" % nRet)
+                    logging.error(f"Release frame failed! ErrorCode[{nRet}]")
                 
                 # 是否退出
                 if not self.b_start_grabbing:
@@ -347,20 +348,20 @@ class CameraDevice():
             # self.b_exit = False
             ret = self.obj_cam.IMV_StartGrabbing()
             if ret != IMV_OK:
-                print(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
+                logging.error(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
             else:
-                print(f"start grabbing camera[{self.m_index}] successfully!")
+                logging.info(f"start grabbing camera[{self.m_index}] successfully!")
                 self.b_start_grabbing = True
             # return ret
         
             try:
                 thread_id = self.m_index
                 self.h_thread_handle = threading.Thread(target=CameraDevice.getFrameThreadProc, args=(self, winHandle))
-                print(f'starting thread: {self.h_thread_handle}')
+                logging.debug(f'starting thread: {self.h_thread_handle}')
                 self.h_thread_handle.start()
                 self.b_thread_closed = True
             except Exception as e:
-                print(f"error: unable to start thread with error [{e}]")
+                logging.error(f"error: unable to start thread with error [{e}]")
         # return MV_E_CALLORDER
         
 
@@ -382,9 +383,9 @@ class CameraDevice():
                 self.b_thread_closed = False
             ret = self.obj_cam.IMV_StopGrabbing()
             if ret != 0:
-                print(f"stop grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
+                logging.error(f"stop grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
                 return ret
-            print(f"stop grabbing camera[{self.m_index}] successfully!")
+            logging.info(f"stop grabbing camera[{self.m_index}] successfully!")
             self.b_start_grabbing = False
             # self.b_exit = True
             return IMV_OK
@@ -400,7 +401,7 @@ class CameraDevice():
         
         while True:
             image = self.image_queue.get()
-            print(f'detect  image: [{image}]')
+            logging.debug(f'detect  image: [{image}]')
             # cv2.imencode('.jpg', image[1])[1].tofile(image[0])
             # results = detectFrame(model,job,image[0])
             results = detectFrame(model,job,image)
@@ -432,6 +433,8 @@ class CameraDevice():
 
 
     def startDetecting(self,model,job,job_lock,job_results,winHandle):
+        if not self.obj_cam:
+            return IMV_ERROR
         if not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
         
@@ -439,9 +442,9 @@ class CameraDevice():
             # self.b_exit = False
             # ret = self.obj_cam.IMV_StartGrabbing()
             # if ret != IMV_OK:
-            #     print(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
+            #     logging.error(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
             # else:
-            #     print(f"start grabbing camera[{self.m_index}] successfully!")
+            #     logging.info(f"start grabbing camera[{self.m_index}] successfully!")
             #     self.b_start_grabbing = True
             # # return ret
             self.b_start_detecting = True
@@ -449,29 +452,31 @@ class CameraDevice():
             try:
                 thread_id = self.m_index
                 self.h_thread_handle_detect = threading.Thread(target=CameraDevice.detect, args=(self, model, job, job_lock, job_results, winHandle))
-                print(f'starting thread: {self.h_thread_handle_detect}')
+                logging.debug(f'starting thread: {self.h_thread_handle_detect}')
                 self.h_thread_handle_detect.start()
                 self.b_thread_closed_detect = True
             except Exception as e:
-                print(f"error: unable to start thread with error [{e}]")
+                logging.error(f"error: unable to start thread with error [{e}]")
         
         pass
     
     def stopDetecting(self,job,job_lock,job_results,winHandle):
+        if not self.obj_cam:
+            return IMV_ERROR
         if not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
     
         if self.b_start_detecting and self.b_start_grabbing:
             self.put_image = False
-            print(f'---------------------本次检测任务停止中----------------------------')
+            logging.info(f'---------------------本次检测任务停止中----------------------------')
             while not self.image_queue.empty():
-                print(f'剩余待检测图像：{self.image_queue.qsize()}张，等待本次检测完成..................')
+                logging.info(f'剩余待检测图像：{self.image_queue.qsize()}张，等待本次检测完成..................')
                 time.sleep(2)
                 continue
             # 阻塞等待队列中所有图像检测完成
             self.image_queue.join()
             # 退出线程
-            print(f'---------------------本次检测任务完成------------------------------')
+            logging.info(f'---------------------本次检测任务完成------------------------------')
             job_lock.acquire()
             job_results.extend(current_device_results)
             job_lock.release()
@@ -499,7 +504,7 @@ class CameraDevice():
 
         ret = self.obj_cam.IMV_AttachGrabbing(CALL_BACK_FUN,None)
         if ret != IMV_OK:
-            print("IMV_AttachGrabbing failed. ret:%d"% ret)
+            logging.error(f"IMV_AttachGrabbing failed. ret:{ret}")
 
         return self.cam.IMV_StartGrabbing()
 
@@ -508,11 +513,11 @@ class CameraDevice():
 
     def onGetFrame(pFrame,pUser):
         if pFrame == None:
-            print("pFrame is None!")
+            logging.warning("pFrame is None!")
             return
         Frame = cast(pFrame, POINTER(IMV_Frame)).contents
 
-        print("Get frame blockID = ", Frame.frameInfo.blockId)
+        logging.info(f"Get frame blockID = {Frame.frameInfo.blockId}")
         return
 
     CALL_BACK_FUN = FrameInfoCallBack(onGetFrame)
@@ -531,7 +536,7 @@ class CameraDevice():
     #     elif pDeviceInfo.nCameraType == typeU3vCamera:
     #         strType="U3V"
     #     deviceStr = "[%d]  %s   %s    %s      %s     %s           %s" % (index, strType,strVendorName,strModeName,strSerialNumber,strCameraname,strIpAdress)
-    #     print (deviceStr)
+    #     logging.info (deviceStr)
     #     return deviceStr
 
     def setIntValue(self,pFeatureName,intValue):
@@ -607,10 +612,10 @@ class DeviceSystem():
         # 枚举设备
         nRet = MvCamera.IMV_EnumDevices(deviceList, interfaceType)
         if IMV_OK != nRet:
-            print("Enumeration devices failed! ErrorCode", nRet)
+            logging.error(f"Enumeration devices failed! ErrorCode {nRet}")
             sys.exit()
         if deviceList.nDevNum == 0:
-            print("find no device!")
+            logging.warning("find no device!")
             # sys.exit()
 
         self.m_DeviceNum = deviceList.nDevNum
@@ -619,7 +624,7 @@ class DeviceSystem():
             self.m_DeviceStr.append(self.getDeviceInfo(i,deviceList.pDevInfo[i]))
 
         self.m_DeviceStr.extend(testCameras())
-        print("deviceList size is", deviceList.nDevNum)
+        logging.info(f"deviceList size: {deviceList.nDevNum}")
         # displayDeviceInfo(deviceList)
 
     def unInitSystem(self):
@@ -637,5 +642,5 @@ class DeviceSystem():
         elif pDeviceInfo.nCameraType == typeU3vCamera:
             strType="U3V"
         deviceStr = "[%d]  %s   %s    %s     %s    %s     %s" % (index, strType,strVendorName,strModeName,strSerialNumber,strCameraname,strIpAdress)
-        print (deviceStr)
+        logging.debug (deviceStr)
         return deviceStr

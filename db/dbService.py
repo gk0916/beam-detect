@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from db.dbModels import *
 import time
 import yaml
+import logging
 
 
 database_yaml = 'config/database.yaml'
@@ -17,7 +18,7 @@ database = yaml_data['database']
 database_open = yaml_data['database_open']
 
 mysql_url = f"mysql+pymysql://{user}:{password}@{url}/{database}?charset=utf8"
-print(f'mysql连接信息：{mysql_url}')
+logging.info(f'mysql连接信息：{mysql_url}')
 # 创建数据库连接
 # engine = create_engine(f"mysql+pymysql://root:root123456@192.168.105.58:3306/ruoyi?charset=utf8")
 engine = create_engine(mysql_url)
@@ -34,7 +35,7 @@ def update_busi_beam_pic(data: BusiBeamPic):
     # 保存数据
     session.add(data)
     session.commit()
-    print(data.id)
+    logging.debug(data.id)
 
 def update_busi_beam_pic_list(data: list):
     # 外观检测图像结果信息
@@ -45,7 +46,7 @@ def update_busi_beam_pic_list(data: list):
     # 保存数据
     session.add_all(data)
     # session.commit()
-    # print(data.id)
+    logging.debug(data.id)
 
 
 def update_busi_beam(beam_code: str, defects: dict):
@@ -99,4 +100,5 @@ def update_busi_beam(beam_code: str, defects: dict):
         }
 
     with engine.begin() as conn:
+        logging.debug(f'sql: {stmt}, values: {values}')
         conn.execute(text(stmt), values)

@@ -10,6 +10,7 @@ import numpy
 # import cv2
 import os
 # from ctypes import *
+import logging
 
 device_dic = {'xy-01-01':'1面-1排',
               'xy-01-02':'1面-2排',
@@ -23,7 +24,7 @@ def saveImageByCv(cam,frame,fileName):
     stPixelConvertParam=IMV_PixelConvertParam()
 
     if  None==byref(frame) :
-        print("pFrame is NULL!")
+        logging.warning("pFrame is NULL!")
     # 给转码所需的参数赋值
 
     if IMV_EPixelType.gvspPixelMono8==frame.frameInfo.pixelFormat:
@@ -51,7 +52,7 @@ def saveImageByCv(cam,frame,fileName):
 
     # nRet = cam.IMV_ReleaseFrame(frame)
     # if IMV_OK != nRet:
-    #     print("Release frame failed! ErrorCode[%d]\n", nRet)
+    #     logging.error("Release frame failed! ErrorCode[%d]\n", nRet)
     #     sys.exit()
 
     # 如果图像格式是 Mono8 直接使用
@@ -73,7 +74,7 @@ def saveImageByCv(cam,frame,fileName):
 
         nRet=cam.IMV_PixelConvert(stPixelConvertParam)
         if IMV_OK!=nRet:
-            print("image convert to failed! ErrorCode[%d]" % nRet)
+            logging.error("image convert to failed! ErrorCode[%d]" % nRet)
             del pDstBuf
             sys.exit()
         rgbBuff = c_buffer(b'\0', stPixelConvertParam.nDstBufSize)
@@ -90,7 +91,7 @@ def saveImageByCv(cam,frame,fileName):
     # height = cvImage.shape[0]
     # cv2.imencode('.jpg', cvImage)[1].tofile(fileName)
     # t2 = time.time()
-    # print('运行时间:%s毫秒' % ((t2 - t1) * 1000))
+    # logging.debug('运行时间:%s毫秒' % ((t2 - t1) * 1000))
     # # gc.collect()
     return cvImage
 
@@ -104,9 +105,9 @@ class pictureThread (threading.Thread):
         self.device = device
         self.pictured_images = []
     def run(self):
-        print ("开启线程：" + self.name)
+        logging.debug ("开启线程：" + self.name)
         self.picture()
-        print ("退出线程：" + self.name)
+        logging.debug ("退出线程：" + self.name)
 
     def picture(self):
         devHandle = self.device.cam.handle
@@ -118,7 +119,7 @@ class pictureThread (threading.Thread):
         while not self.g_isExitThread:
             ret = self.device.cam.IMV_ExecuteCommandFeature("TriggerSoftware")
             if ret != IMV_OK:
-                print("Execute TriggerSoftware failed! ErrorCode:",ret)
+                logging.error(f"Execute TriggerSoftware failed! ErrorCode: {ret}")
                 continue
 
             self.device.getFrame(frame, 500)
@@ -130,7 +131,7 @@ class pictureThread (threading.Thread):
                 os.makedirs(f'{self.job}')
             deviceName = device_dic[self.device.m_userId.decode('utf-8')]
             fineName = f"{self.job}/{deviceName}-{pictureOrder}张.jpg"
-            print(f'fineName: {fineName}')
+            logging.debug(f'fineName: {fineName}')
             image = saveImageByCv(self.device.obj_cam, frame, fineName)
             self.pictured_images.append(image)
             self.device.releaseFrame(frame)

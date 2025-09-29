@@ -1,6 +1,7 @@
 # import cv2
 from pyzbar import pyzbar
 from PIL import Image
+import logging
 
 
 def detect_qc(self,image_file):
@@ -13,6 +14,6 @@ def detect_qc(self,image_file):
         barcode_data = barcode.data.decode("utf-8")
         barcode_type = barcode.type
 
-        print("Barcode Type: {}, Barcode Data: {}".format(barcode_type, barcode_data))
+        logging.debug("Barcode Type: {}, Barcode Data: {}".format(barcode_type, barcode_data))
         res.append((barcode_data,barcode_type))
     res

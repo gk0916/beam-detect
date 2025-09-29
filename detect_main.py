@@ -13,6 +13,7 @@ from ui.detect_main_ui import Ui_MainWindow
 from camera.MVSDK.IMVApi import *
 from camera.device import *
 from task.detect_image import init_model, result2Db
+import logging
 
 # # 获取选取设备信息的索引，通过[]之间的字符去解析
 # def TxtWrapBy(start_str, end, all):
@@ -58,17 +59,17 @@ if __name__ == "__main__":
     def setSoftTriggerConf(cam):
         nRet = cam.IMV_SetEnumFeatureSymbol("TriggerSource", "Software")
         if IMV_OK != nRet:
-            print("Set triggerSource value failed! ErrorCode[%d]" % nRet)
+            logging.error("Set triggerSource value failed! ErrorCode[%d]" % nRet)
             return nRet
 
         nRet = cam.IMV_SetEnumFeatureSymbol("TriggerSelector", "FrameStart")
         if IMV_OK != nRet:
-            print("Set triggerSelector value failed! ErrorCode[%d]" % nRet)
+            logging.error("Set triggerSelector value failed! ErrorCode[%d]" % nRet)
             return nRet
 
         nRet = cam.IMV_SetEnumFeatureSymbol("TriggerMode", "On")
         if IMV_OK != nRet:
-            print("Set triggerMode value failed! ErrorCode[%d]" % nRet)
+            logging.error("Set triggerMode value failed! ErrorCode[%d]" % nRet)
             return nRet
 
     # ch:枚举相机 | en:enum devices
@@ -95,7 +96,7 @@ if __name__ == "__main__":
                 device = SysDevice.m_Device[cameraIndex]
                 ret = device.openDevicebyKey()
                 if ret != IMV_OK:
-                    print("open camera[%d] failed[%d]"% (cameraIndex, ret))
+                    logging.error("open camera[%d] failed[%d]"% (cameraIndex, ret))
                     break
 
                 setSoftTriggerConf(device.obj_cam)
@@ -162,7 +163,7 @@ if __name__ == "__main__":
         result = result2Db(job_results)
 
         job_name = job.split('/')[1]
-        print(f'Job[{job_name}] results count: {len(job_results)}')
+        logging.info(f'Job[{job_name}] results count: {len(job_results)}')
         col1 = QStandardItem(f'{job_name}')
         col1.setToolTip(f'{job_name}')
         col1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -217,7 +218,7 @@ if __name__ == "__main__":
         # SysDevice.unInitSystem()
 
     def tree():
-        print(f'tree view')
+        logging.debug(f'tree view')
 
     def list_models(model_path):
         all_models = []
@@ -287,7 +288,7 @@ if __name__ == "__main__":
     # #use full ABSOLUTE path to the image, not relative
     # pic.setPixmap(QPixmap("C:\\Users\\u1\\Pictures\\image_0001.jpg"))
  
-    # print(ui.ComboModels.currentText())
+    # logging.info(ui.ComboModels.currentText())
     
 
     mainWindow.show()

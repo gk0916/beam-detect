@@ -6,22 +6,23 @@ from camera.device import *
 from ctypes import *
 from camera.picture_thred import *
 import argparse
+import logging
 
 #设置软触发配置
 def setSoftTriggerConf(cam):
     nRet = cam.IMV_SetEnumFeatureSymbol("TriggerSource", "Software")
     if IMV_OK != nRet:
-        print("Set triggerSource value failed! ErrorCode[%d]" % nRet)
+        logging.error("Set triggerSource value failed! ErrorCode[%d]" % nRet)
         return nRet
 
     nRet = cam.IMV_SetEnumFeatureSymbol("TriggerSelector", "FrameStart")
     if IMV_OK != nRet:
-        print("Set triggerSelector value failed! ErrorCode[%d]" % nRet)
+        logging.error("Set triggerSelector value failed! ErrorCode[%d]" % nRet)
         return nRet
 
     nRet = cam.IMV_SetEnumFeatureSymbol("TriggerMode", "On")
     if IMV_OK != nRet:
-        print("Set triggerMode value failed! ErrorCode[%d]" % nRet)
+        logging.error("Set triggerMode value failed! ErrorCode[%d]" % nRet)
         return nRet
 
     return nRet
@@ -34,7 +35,7 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    print(c_char_p(0))
+    logging.info(c_char_p(0))
 
     SysDevice = DeviceSystem()
     SysDevice.initSystem()
@@ -47,25 +48,25 @@ if __name__ == "__main__":
         device = SysDevice.m_Device[cameraIndex]
         ret = device.openDevicebyKey()
         if ret != IMV_OK:
-            print("open camera[%d] failed[%d]"% (cameraIndex, ret))
+            logging.error("open camera[%d] failed[%d]"% (cameraIndex, ret))
             break
 
         # width = c_int(0)
         # ret = SysDevice.m_Device[cameraIndex].getIntValue("Width", width)
         # if ret != IMV_OK:
-        #     print("getIntValue camera[%d] failed[%d]"% (cameraIndex, ret))
+        #     logging.error("getIntValue camera[%d] failed[%d]"% (cameraIndex, ret))
         #     break
 
         # ret = SysDevice.m_Device[cameraIndex].setIntValue("Width", width.value)
         # if ret != IMV_OK:
-        #     print("setIntValue camera[%d] failed[%d]"% (cameraIndex, ret))
+        #     logging.error("setIntValue camera[%d] failed[%d]"% (cameraIndex, ret))
         #     break
 
         setSoftTriggerConf(device.cam)
 
         ret = device.startGrabbing()
         if ret != IMV_OK:
-            print("start grabbing camera[%d] failed[%d]"% (cameraIndex, ret))
+            logging.error("start grabbing camera[%d] failed[%d]"% (cameraIndex, ret))
             break
 
         try:
@@ -73,7 +74,7 @@ if __name__ == "__main__":
             thread.start()
             threads.append(thread)
         except:
-            print(f"error: unable to start thread {thread.name}")
+            logging.error(f"error: unable to start thread {thread.name}")
     
     time.sleep(5)
     # if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     #         thread.join()
     #         ret = thread.device.stopGrabbing()
     #         if ret != IMV_OK:
-    #             print("stop grabbing camera[%d] failed[%d]"% (thread.device.m_userId, ret))
+    #             logging.error("stop grabbing camera[%d] failed[%d]"% (thread.device.m_userId, ret))
     #             break
     #         thread.device.closeDevice()
     
@@ -95,7 +96,7 @@ if __name__ == "__main__":
         thread.join()
         ret = thread.device.stopGrabbing()
         if ret != IMV_OK:
-            print("stop grabbing camera[%d] failed[%d]"% (thread.device.m_userId, ret))
+            logging.error("stop grabbing camera[%d] failed[%d]"% (thread.device.m_userId, ret))
             break
         thread.device.closeDevice()
     
@@ -124,4 +125,4 @@ if __name__ == "__main__":
         detect(source=job)
 
     
-    print(f'{job} 检测完成')
+    logging.info(f'{job} 检测完成')

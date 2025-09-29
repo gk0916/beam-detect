@@ -9,6 +9,7 @@ from util.utils import crop, list_file, list_folder_files
 import re
 import platform
 from pyzbar import pyzbar
+import logging
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -46,7 +47,7 @@ def detect_QR_code(images):
             barcode_type = barcode.type
             
             if barcode_data and barcode_data != '':
-                # print("Barcode Type: {}, Barcode Data: {}".format(barcode_type, barcode_data))
+                logging.debug("Barcode Type: {}, Barcode Data: {}".format(barcode_type, barcode_data))
                 return barcode_data    
     return None
 
@@ -85,7 +86,7 @@ def predict_no_crop(model, folder, images):
     t1 = time.time()
     # 以原图尺寸检测
     for im in images:
-        print(f'im: {im}')
+        logging.debug(f'im: {im}')
         size = Image.open(im).size
         # result = model.predict(project='mark_pics/' + source_name
         result = model.track(project='mark_pics/' + source_name
@@ -107,7 +108,7 @@ def predict_no_crop(model, folder, images):
                             )
         results.extend(result)
     t2 = time.time()
-    print('原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
+    logging.debug('原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
     return results
 
 
@@ -132,7 +133,7 @@ def predict_no_crop(model, folder, images):
 #                                )
 #         results.append(result)
 #     T2 = time.time()
-#     print('剪裁为640*640尺寸检测运行时间:%s毫秒' % ((T2 - T1) * 1000))
+#     logging.debug('剪裁为640*640尺寸检测运行时间:%s毫秒' % ((T2 - T1) * 1000))
 #     return result
 
 
@@ -214,7 +215,7 @@ def result2Db(results: list):
         #     raise Exception(f'检测结果标签与定义标签不匹配；定义标签：{define_class_names},检测标签：{label_names}')
 
         # 各标签检测数量
-        # print(f'boxes:{result.boxes}')
+        # logging.debug(f'boxes:{result.boxes}')
         if not result.boxes.is_track:
             cls = []
             ids = []
@@ -258,7 +259,7 @@ def result2Db(results: list):
                          .holes_num(holes_num)
                          .build())
         datas.append(busi_beam_pic)
-        print(f'busi_beam_pic is: {busi_beam_pic}')
+        logging.debug(f'busi_beam_pic is: {busi_beam_pic}')
 
         # if i == 0:
         #     total_datas[beam_code] = sub_data
@@ -272,8 +273,8 @@ def result2Db(results: list):
         # total_datas[beam_code]['exposedtendons_num'] = total_datas[beam_code]['exposedtendons_num'] + exposedtendons_num
         # total_datas[beam_code]['rootrot_num'] = total_datas[beam_code]['rootrot_num'] + rootrot_num
         # total_datas[beam_code]['holes_num'] = total_datas[beam_code]['holes_num'] + holes_num
-    print(f'cls_ids: {cls_ids}')
-    print(f'key: {define_class2key['bubble']}')
+    logging.debug(f'cls_ids: {cls_ids}')
+    logging.debug(f'key: {define_class2key['bubble']}')
     total_datas['beam_code'] = beam_code
     total_datas['bubble_num'] = cls_ids[define_class2key['bubble']] if define_class2key['bubble'] in cls_ids else 0
     total_datas['crack_num'] = cls_ids[define_class2key['crack']] if define_class2key['crack'] in cls_ids else 0
@@ -286,7 +287,7 @@ def result2Db(results: list):
     total_datas['rootrot_num'] = cls_ids[define_class2key['rootrot']] if define_class2key['rootrot'] in cls_ids else 0
     total_datas['holes_num'] = cls_ids[define_class2key['holes']] if define_class2key['holes'] in cls_ids else 0
 
-    print(f'busi_beam is: {beam_code} => {total_datas}')
+    logging.debug(f'busi_beam is: {beam_code} => {total_datas}')
     try:    
         # 批量写入数据库
         dbService.session.begin()
@@ -296,7 +297,7 @@ def result2Db(results: list):
         dbService.session.commit()
     except Exception as e:
         dbService.session.rollback()
-        print(f'rollback data beacause of error: {e}')
+        logging.error(f'rollback data beacause of error: {e}')
     finally:
         dbService.session.close()
     return total_datas
@@ -317,7 +318,7 @@ def init_model(model='yolov8n.pt'):
     # model.add_callback('on_predict_end',on_predict_end)
     
     t2 = time.time()
-    print('加载模型运行时间:%s毫秒' % ((t2 - t1) * 1000))
+    logging.debug('加载模型运行时间:%s毫秒' % ((t2 - t1) * 1000))
     
     return model
 
@@ -343,7 +344,7 @@ def detectFrame(model,job,image):
                             , visualize = args.visualize
                             )
         t2 = time.time()
-        print('图片-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
+        logging.debug('图片-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
         # save
         result2Db(results)
         return results
@@ -357,7 +358,7 @@ def detect(source,model='models/bubble-best.pt'):
         t1 = time.time()
         # 以原图尺寸检测
         for im in images:
-            print(f'im: {im}')
+            logging.debug(f'im: {im}')
             result = model.track(project=source
                                 , name='predict'
                                 , source=im
@@ -377,9 +378,9 @@ def detect(source,model='models/bubble-best.pt'):
                                 )
             results.extend(result)
         t2 = time.time()
-        print('图片-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
+        logging.debug('图片-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
         # save
-        print(f'results: {results}')
+        logging.info(f'results: {results}')
         result2Db(results)
 
 
@@ -392,7 +393,7 @@ def track(source,model_file='models/bubble-best.pt'):
         t1 = time.time()
         # 以原图尺寸检测
         for video in videos:
-            print(f'video: {video}')
+            logging.debug(f'video: {video}')
             result = model.track(project=source
                                 , name='track'
                                 , source=video
@@ -411,9 +412,9 @@ def track(source,model_file='models/bubble-best.pt'):
                                 )
             results.extend(result)
         t2 = time.time()
-        print('视频-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
+        logging.debug('视频-原图尺寸检测运行时间:%s毫秒' % ((t2 - t1) * 1000))
         # save
-        print(f'results: {results}')
+        logging.info(f'results: {results}')
         # result2Db(results)
 
 if __name__ == '__main__':

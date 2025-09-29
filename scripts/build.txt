@@ -21,6 +21,8 @@ nuitka detect_main.py ^
   --standalone ^
   --windows-console-mode=disable ^
   --plugin-enable=pyqt5 ^
+  --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_videoio_ffmpeg*.dll=." ^
+  --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_world*.dll=." ^
   --follow-import-to=task,camera,config,db ^
   --nofollow-import-to=sqlalchemy.dialects.oracle ^
   --nofollow-import-to=sqlalchemy.dialects.sqlite ^
@@ -35,6 +37,8 @@ nuitka detect_main.py ^
     --standalone ^
     --windows-console-mode=disable ^
     --plugin-enable=pyqt5 ^
+    --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_videoio_ffmpeg*.dll=." ^
+    --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_world*.dll=." ^
     --nofollow-import-to=sqlalchemy.dialects.oracle ^
     --nofollow-import-to=sqlalchemy.dialects.sqlite ^
     --nofollow-import-to=sympy.polys.polyquinticconst ^

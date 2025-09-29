@@ -1,18 +1,35 @@
 # detect_main_ui.py
 import os
 import sys
+import logging
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QStandardItemModel, QIcon  
 from PyQt5.QtWidgets import QHeaderView
+from PyQt5.QtCore import pyqtSignal, QObject
 
 from .svg_icon import SvgIconProvider
 from .MultiSelectComboBox import MultiSelectComboBox
+
 
 # ========== 图标路径函数 ==========
 def icon_path(name):
     """返回正确的图标路径（基于当前文件位置）"""
     ui_dir = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在目录（ui/）
     return os.path.join(ui_dir, "icons", name + ".svg").replace("\\", "/")
+
+
+# ==================== 日志 Handler ====================
+class QtHandler(logging.Handler, QObject):
+    log_signal = pyqtSignal(str, str)  # 日志消息 + 日志级别
+
+    def __init__(self):
+        logging.Handler.__init__(self)
+        QObject.__init__(self)
+
+    def emit(self, record):
+        msg = self.format(record)
+        level = record.levelname
+        self.log_signal.emit(msg, level)
 
 
 # ==================== 动态变色按钮封装 ====================
@@ -78,12 +95,13 @@ class StyledButton(QtWidgets.QPushButton):
         super().mouseReleaseEvent(event)
 
 
+    
 # ==================== 主界面 UI ====================
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1920, 1080)
-        MainWindow.setWindowIcon(QIcon(icon_path('camera-ai')))
+        MainWindow.setWindowIcon(QIcon(icon_path('camera-ai-fill')))
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -94,7 +112,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
         
-
         self.ComboDevices = MultiSelectComboBox(self.centralwidget)
         self.ComboDevices.setMinimumSize(QtCore.QSize(580, 32))
         self.ComboDevices.setObjectName("ComboDevices")
@@ -116,21 +133,12 @@ class Ui_MainWindow(object):
         self.groupCamera.setObjectName("groupCamera")
         self.hLayoutCamera = QtWidgets.QHBoxLayout(self.groupCamera)
 
-        # 使用 StyledButton 替换原始 QPushButton
         self.bnEnum = StyledButton(" 查找相机", icon_path("search"), self.groupCamera)
         self.bnOpen = StyledButton(" 打开相机", icon_path("camera-on"), self.groupCamera)
         self.bnClose = StyledButton(" 关闭相机", icon_path("camera-off"), self.groupCamera)
         
-
         for btn in [self.bnEnum, self.bnOpen, self.bnClose]:
             btn.setMinimumHeight(40)
-            # btn.setStyleSheet("""
-            #     QPushButton {
-            #         font-size: 22px;
-            #         text-align: left;
-            #         padding-left: 15px;
-            #     }
-            # """)
             self.hLayoutCamera.addWidget(btn)
 
         self.gridLayout_5.addWidget(self.groupCamera, 0, 0, 1, 1)
@@ -143,17 +151,12 @@ class Ui_MainWindow(object):
         # 第一行：Label + ComboBox
         self.hLayoutTop = QtWidgets.QHBoxLayout()
         self.modelLabel = QtWidgets.QLabel(self.centralwidget)
-
-        # 固定 label 宽度
         self.modelLabel.setFixedWidth(110)
-
         self.ComboModels = QtWidgets.QComboBox(self.centralwidget)
         self.ComboModels.setObjectName("comModels")
 
-        # 添加时给 ComboBox 设置 stretch=1，这样它会占满剩余空间
         self.hLayoutTop.addWidget(self.modelLabel)
         self.hLayoutTop.addWidget(self.ComboModels, 1)
-
 
         # 第二行：Start + Stop
         self.hLayoutBottom = QtWidgets.QHBoxLayout()
@@ -162,21 +165,11 @@ class Ui_MainWindow(object):
 
         for btn in [self.bnStart, self.bnStop]:
             btn.setMinimumHeight(40)
-            # btn.setStyleSheet("""
-            #     QPushButton {
-            #         font-size: 15px;
-            #         text-align: left;
-            #         padding-left: 15px;
-            #     }
-            # """)
             self.hLayoutBottom.addWidget(btn)
 
-        # 把两行加入到 groupDetect 的垂直布局
         self.vLayoutDetect.addLayout(self.hLayoutTop)
         self.vLayoutDetect.addLayout(self.hLayoutBottom)
-
         self.gridLayout_5.addWidget(self.groupDetect, 1, 0, 1, 1)
-
 
         # 检测结果
         self.groupResult = QtWidgets.QGroupBox(self.centralwidget)
@@ -188,7 +181,6 @@ class Ui_MainWindow(object):
         self.resultTable.setStyleSheet("font-size: 22px;")
         self.resultTable.verticalHeader().setVisible(False)
 
-        # 数据模型
         self.resultModel = QStandardItemModel(0, 4)
         self.resultModel.setHorizontalHeaderLabels(['检测任务', '梁编号', '气泡数', '裂缝数'])
         self.resultTable.setModel(self.resultModel)
@@ -199,22 +191,91 @@ class Ui_MainWindow(object):
         self.vLayoutResult.addWidget(self.resultTable)
         self.gridLayout_5.addWidget(self.groupResult, 2, 0, 1, 1)
 
-        # 添加右侧布局
         self.horizontalLayout_2.addLayout(self.gridLayout_5)
-
-        # 设置左右比例
         self.horizontalLayout_2.setStretch(0, 3)
         self.horizontalLayout_2.setStretch(1, 1)
 
         self.gridLayout_4.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
+
+        # ---------------- 日志输出 ----------------
+        self.groupLog = QtWidgets.QGroupBox(self.centralwidget)
+        self.groupLog.setTitle("日志输出")
+        self.groupLog.setObjectName("groupLog")
+        
+        self.vLayoutLog = QtWidgets.QVBoxLayout(self.groupLog)
+        self.vLayoutLog.setContentsMargins(3, 0, 3, 3) 
+        self.vLayoutLog.setSpacing(3)
+
+        # 日志工具栏
+        self.hLayoutLogTools = QtWidgets.QHBoxLayout()
+        self.hLayoutLogTools.setContentsMargins(0, 0, 0, 0)
+        self.hLayoutLogTools.setSpacing(5)
+        self.hLayoutLogTools.addStretch()
+
+        # Label
+        self.levelLabel = QtWidgets.QLabel("日志级别:")
+        self.levelLabel.setObjectName("levelLabel")
+        self.hLayoutLogTools.addWidget(self.levelLabel, alignment=QtCore.Qt.AlignVCenter)
+
+        # 下拉框
+        self.logLevelBox = QtWidgets.QComboBox()
+        self.logLevelBox.addItems(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
+        self.logLevelBox.setCurrentText("INFO")
+        self.logLevelBox.setObjectName("logLevelBox")
+        self.hLayoutLogTools.addWidget(self.logLevelBox, alignment=QtCore.Qt.AlignVCenter)
+
+        # 清空日志按钮
+        self.btnClearLog = QtWidgets.QPushButton("清空日志")
+        self.btnClearLog.setObjectName("btnClearLog")
+        self.hLayoutLogTools.addWidget(self.btnClearLog, alignment=QtCore.Qt.AlignVCenter)
+        
+        # self.hLayoutLogTools.addWidget(self.levelLabel, 0, QtCore.Qt.AlignVCenter)
+        # self.hLayoutLogTools.addWidget(self.logLevelBox, 0, QtCore.Qt.AlignVCenter)
+        # self.hLayoutLogTools.addWidget(self.btnClearLog, 0, QtCore.Qt.AlignVCenter)
+        
+        self.vLayoutLog.addLayout(self.hLayoutLogTools)
+
+
+        # 日志输出区
+        self.logOutput = QtWidgets.QPlainTextEdit(self.groupLog)
+        self.logOutput.setReadOnly(True)
+        self.logOutput.setStyleSheet("font-size: 18px; background-color: #F5F5F5; color: #000;")
+        
+        self.vLayoutLog.addWidget(self.logOutput)
+
+        self.gridLayout_4.addWidget(self.groupLog, 1, 0, 1, 1)
+
+        # 设置上下伸缩比例：主区域 3，日志区域 1
+        self.gridLayout_4.setRowStretch(0, 3)
+        self.gridLayout_4.setRowStretch(1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
+
+        # ---------------- 日志绑定 ----------------
+        os.makedirs("logs", exist_ok=True)
+
+        self.log_handler = QtHandler()
+        self.log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        self.log_handler.log_signal.connect(self.append_log)
+
+        file_handler = logging.FileHandler("logs/app.log", encoding="utf-8")
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
+        logging.getLogger().addHandler(self.log_handler)   # 输出到 UI
+        logging.getLogger().addHandler(file_handler)       # 输出到文件
+        logging.getLogger().setLevel(logging.INFO)
+
+        # 日志级别切换
+        self.logLevelBox.currentTextChanged.connect(self.change_log_level)
+
+        # 清空日志
+        self.btnClearLog.clicked.connect(self.clear_log)
 
         # 状态栏
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         MainWindow.setStatusBar(self.statusbar)
 
         # 初始化控件状态
-        # self.groupDetect.setEnabled(False)
         self.ComboModels.setEnabled(True)
         self.bnOpen.setEnabled(False)
         self.bnClose.setEnabled(False)
@@ -224,7 +285,9 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        # ---------------- AI 科技风格 QSS（大字体版） ----------------
+        
+
+        # ---------------- AI 科技风格 QSS ----------------
         MainWindow.setStyleSheet(f"""
             QWidget {{
                 font-family: "Microsoft YaHei";
@@ -433,8 +496,37 @@ class Ui_MainWindow(object):
             QTabBar::tab:hover {{
                 background: #F1F3F5;
             }}
+            #groupLog {{
+                margin-top: 0px;
+                padding: 8px;
+            }}
+            #levelLabel {{
+                font-size: 16px;
+                min-height: 32px;
+                max-height: 32px;
+                padding: 0px;
+            }}
+            #logLevelBox {{
+                font-size: 16px;
+                min-height: 32px;
+                max-height: 32px;
+                padding: 2px 6px;
+            }}
+            #btnClearLog {{
+                background-color: #D6D8DB;
+                color: #495057;
+                font-size: 16px;
+                min-height: 32px;
+                max-height: 32px;
+                padding: 2px 10px;
+            }}
+            #btnClearLog:hover {{
+                background-color: #C8CBCE;
+            }}
+            #btnClearLog:pressed {{
+                background-color: #ADB1B5;
+            }}
         """)
-
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -443,3 +535,26 @@ class Ui_MainWindow(object):
         self.groupDetect.setTitle(_translate("MainWindow", "图像检测"))
         self.groupResult.setTitle(_translate("MainWindow", "检测记录"))
         self.modelLabel.setText(_translate("MainWindow", "选择模型："))
+        self.groupLog.setTitle(_translate("MainWindow", "日志输出"))
+
+    def append_log(self, msg, level):
+        """在日志窗口显示日志，不同级别不同颜色"""
+        color_map = {
+            "DEBUG": "#808080",
+            "INFO": "#000000",
+            "WARNING": "#FFA500",
+            "ERROR": "#FF0000",
+            "CRITICAL": "#800000"
+        }
+        color = color_map.get(level, "#000000")
+        self.logOutput.appendHtml(f'<span style="color:{color};">{msg}</span>')
+        self.logOutput.verticalScrollBar().setValue(self.logOutput.verticalScrollBar().maximum())
+
+    def change_log_level(self, level):
+        """切换日志级别"""
+        logging.getLogger().setLevel(getattr(logging, level))
+        self.append_log(f"日志级别切换为 {level}", "INFO")
+
+    def clear_log(self):
+        """清空日志窗口"""
+        self.logOutput.clear()

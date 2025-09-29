@@ -5,12 +5,13 @@ import ctypes
 import platform
 from camera.MVSDK.IMVDefines import *
 import os
+import logging
 
 Huaray_SDK_ROOT = os.getenv("Huaray_SDK_ROOT", None)
 # 加载SDK动态库
 # load SDK library
 if sys.platform == 'win32':
-    # print("Windows")
+    # logging.debug("Windows")
     bits, linkage = platform.architecture()
     if bits == '64bit':
         MVSDKdll = WinDLL(f"{Huaray_SDK_ROOT}\\MV Viewer\\Runtime\\x64\\MVSDKmd.dll")
@@ -18,7 +19,7 @@ if sys.platform == 'win32':
         MVSDKdll = WinDLL(f"{Huaray_SDK_ROOT}\\MV Viewer\\Runtime\\Win32\\MVSDKmd.dll")
 else:
     # SDK文件名ibMVSDK.so
-    print("Linux系统请设置系统环境变量Huaray_SDK_ROOT定位至SDK所在路径")
+    logging.error("Linux系统请设置系统环境变量Huaray_SDK_ROOT定位至SDK所在路径")
     # MVSDKdll = CDLL("../../../lib/libMVSDK.so")
 
 
