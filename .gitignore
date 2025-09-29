@@ -5,3 +5,14 @@ runs/
 test/
 wandb/
 *.pt
+
+out/
+out-mingw64/
+
+*.log
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version

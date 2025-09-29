@@ -16,13 +16,31 @@ nuitka --standalone --show-memory --show-progress --nofollow-imports --output-di
 
 nuitka --standalone --show-memory --show-progress --nofollow-imports --follow-import-to=camera,db,task,ui,util --output-dir=out3 --windows-icon-from-ico=D:\dev\projects\beam-detect\ui\camera_icon.ico detect_main.py
 
-
+set CL=/Zm1000
 nuitka detect_main.py ^
   --standalone ^
-  --windows-disable-console ^
-  --plugin-enable=numpy,pyqt5,torch ^
-  --follow-import-to=task,camera ^
+  --windows-console-mode=disable ^
+  --plugin-enable=pyqt5 ^
+  --follow-import-to=task,camera,config,db ^
+  --nofollow-import-to=sqlalchemy.dialects.oracle ^
+  --nofollow-import-to=sqlalchemy.dialects.sqlite ^
+  --nofollow-import-to=sympy.polys.polyquinticconst ^
   --output-dir=out ^
   --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
-  --lto=yes
-  --jobs=8
+  --jobs=4 ^
+  --lto=no
+
+
+nuitka detect_main.py ^
+    --standalone ^
+    --windows-console-mode=disable ^
+    --plugin-enable=pyqt5 ^
+    --nofollow-import-to=sqlalchemy.dialects.oracle ^
+    --nofollow-import-to=sqlalchemy.dialects.sqlite ^
+    --nofollow-import-to=sympy.polys.polyquinticconst ^
+    --output-dir=out-mingw64 ^
+    --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
+    --jobs=4 ^
+    --lto=no ^
+    --mingw64
+

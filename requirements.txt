@@ -8,11 +8,10 @@ Pillow==11.2.1
 pyheatmap==0.1.12
 PyQt5==5.15.11
 PyYAML==6.0.2
-PyYAML==6.0.2
 pyzbar==0.1.9
 SQLAlchemy==2.0.41
-torch==2.5.1
+# torch==2.5.1
 tqdm==4.67.1
-ultralytics==8.3.147
+# ultralytics==8.3.147
 wandb==0.19.11
 pymysql
