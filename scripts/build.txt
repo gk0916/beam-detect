@@ -45,15 +45,14 @@ conda install nuitka ^
 conda install zlib
 
 set INCLUDE=D:\Anaconda3\envs\yolo\Library\include;%INCLUDE% ^
-set LIB=D:\Anaconda3\envs\yolo\Library\lib;%LIB% ^
-nuitka detect_main.py ^
+set LIB=D:\Anaconda3\envs\yolo\Library\lib;%LIB% & nuitka detect_main.py ^
    --standalone ^
    --windows-console-mode=disable ^
    --plugin-enable=pyqt5 ^
-   --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\zlib.dll=." ^
    --include-package=ultralytics ^
    --follow-import-to=ultralytics ^
    --follow-import-to=task,camera,config,db ^
+   --nofollow-import-to=wandb ^
    --nofollow-import-to=sqlalchemy.dialects.oracle ^
    --nofollow-import-to=sqlalchemy.dialects.sqlite ^
    --nofollow-import-to=sympy.polys.polyquinticconst ^
@@ -62,5 +61,130 @@ nuitka detect_main.py ^
    --jobs=4 ^
    --lto=no ^
    --mingw64 ^
-   --devel-recompile-c-only ^
-   --show-scons
+   --show-scons ^
+   --devel-recompile-c-only
+
+
+   
+### build log ###
+(yolo) D:\dev\projects\beam-detect>
+(yolo) D:\dev\projects\beam-detect>
+(yolo) D:\dev\projects\beam-detect>nuitka detect_main.py ^
+More?    --standalone ^
+More?    --windows-console-mode=disable ^
+More?    --plugin-enable=pyqt5 ^
+More?    --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\zlib.dll=." ^
+More?    --include-package=ultralytics ^
+More?    --follow-import-to=ultralytics ^
+More?    --follow-import-to=task,camera,config,db ^
+More?    --nofollow-import-to=sqlalchemy.dialects.oracle ^
+More?    --nofollow-import-to=sqlalchemy.dialects.sqlite ^
+More?    --nofollow-import-to=sympy.polys.polyquinticconst ^
+More?    --output-dir=out-mingw64 ^
+More?    --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
+More?    --jobs=4 ^
+More?    --lto=no ^
+More?    --mingw64 ^
+More?    --show-scons
+Nuitka-Options: Used command line options:
+Nuitka-Options:   detect_main.py --standalone --windows-console-mode=disable --plugin-enable=pyqt5
+Nuitka-Options:   --include-plugin-files=D:\anaconda3\envs\yolo\Library\bin\zlib.dll=. --include-package=ultralytics
+Nuitka-Options:   --follow-import-to=ultralytics --follow-import-to=task,camera,config,db
+Nuitka-Options:   --nofollow-import-to=sqlalchemy.dialects.oracle --nofollow-import-to=sqlalchemy.dialects.sqlite
+Nuitka-Options:   --nofollow-import-to=sympy.polys.polyquinticconst --output-dir=out-mingw64
+Nuitka-Options:   --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico --jobs=4 --lto=no --mingw64 --show-scons
+Nuitka-Plugins:WARNING: pyqt5: For the obsolete PyQt5 the Nuitka support is incomplete. Threading, callbacks to compiled
+Nuitka-Plugins:WARNING: functions, etc. may not be working.
+Nuitka-Plugins:WARNING:     Complex topic! More information can be found at https://nuitka.net/info/pyqt5.html
+Nuitka: Starting Python compilation with:
+Nuitka:   Version '2.7.16' on Python 3.12 (flavor 'Anaconda Python') commercial grade 'not installed'.
+Nuitka-Inclusion:WARNING: Didn't match any files against pattern 'D:\anaconda3\envs\yolo\Library\bin\zlib.dll=.'.
+Nuitka-Plugins:WARNING: options-nanny: Module has parameter: Torch JIT is disabled by default in standalone mode, make a
+Nuitka-Plugins:WARNING: choice explicit with '--module-parameter=torch-disable-jit=yes|no'
+Nuitka-Plugins:anti-bloat: Not including 'pandas.core._numba.extensions' automatically in order to avoid bloat, but this
+Nuitka-Plugins:anti-bloat: may cause: no numba acceleration.
+Nuitka-Plugins:matplotlib: Using configuration file or default backend 'qtagg'.
+Nuitka: Completed Python level compilation and optimization.
+Nuitka: Generating source code for C backend compiler.
+Nuitka:WARNING: Did not follow import to unused 'config', consider include options.
+Nuitka: Running data composer tool for optimal constant value handling.
+Nuitka: Running C compilation via Scons.
+Nuitka-Scons: Scons command: C:\Users\u1\.conda\envs\yolo\python.exe -W ignore
+Nuitka-Scons: C:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\INLINE~1\bin\scons.py -f
+Nuitka-Scons: C:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\Backend.scons --jobs 4 --warn=no-deprecated
+Nuitka-Scons: --no-site-dir --debug=stacktrace nuitka_src=C:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build
+Nuitka-Scons: python_version=3.12 python_prefix=C:\Users\u1\.conda\envs\yolo experimental= debug_modes= deployment=false
+Nuitka-Scons: no_deployment= show_scons=true mingw_mode=true console_mode=disable lto_mode=no noelf_mode=true
+Nuitka-Scons: anaconda_python=true cpp_defines=_NUITKA_PLUGIN_MULTIPROCESSING_ENABLED=1 target_arch=x86_64
+Nuitka-Scons: module_mode=false dll_mode=false exe_mode=true standalone_mode=true gil_mode=true source_dir=.
+Nuitka-Scons: nuitka_python=false debug_mode=false debugger_mode=false python_debug=false full_compat=false
+Nuitka-Scons: trace_mode=false file_reference_mode=runtime compiled_module_count=5025
+Nuitka-Scons: result_exe=D:\dev\projects\beam-detect\out-mingw64\detect_main.dist\detect_main.exe frozen_modules=155
+Nuitka-Scons: python_sysflag_no_site=true
+scons: Reading SConscript files ...
+Nuitka-Scons: CC='cl.exe'
+Nuitka-Scons: Initial CC: 'gcc'
+Nuitka-Scons: Initial CCVERSION: None
+Nuitka-Scons: Overridden with environment CC: 'cl.exe'
+Nuitka-Scons: Checking usability of binary 'None' from environment 'cl.exe'.
+Nuitka-Scons: No usable C compiler, attempt fallback to winlibs gcc or clang.
+Nuitka-Scons: CC
+Nuitka-Scons: 'C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe'
+Nuitka-Scons: version check gives (14, 2, 0)
+Scons: Compiler used C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe
+Nuitka-Scons: Backend C compiler: gcc (gcc 14.2.0).
+Nuitka-Scons: Using C11 mode: True
+Nuitka-Scons: Using resource mode: 'win_resource' (default for Windows).
+Nuitka-Scons: Told to run compilation on 4 CPUs.
+Nuitka-Scons: Found ccache
+Nuitka-Scons: 'C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\ccache.exe'
+Nuitka-Scons: to cache C compilation result.
+Nuitka-Scons: Providing real CC path
+Nuitka-Scons: 'C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe'
+Nuitka-Scons: via PATH extension.
+Nuitka-Scons: Launching Scons target: ['D:\\dev\\projects\\beam-detect\\out-mingw64\\detect_main.dist\\detect_main.exe']
+scons: done reading SConscript files.
+scons: Building targets ...
+"C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\ccache.exe" "C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe" -o __constants.o -c -std=c11 -fvisibility=hidden -fwrapv -pipe -Wno-unused-but-set-variable -fpartial-inlining -ftrack-macro-expansion=0 -Wno-deprecated-declarations -fno-var-tracking -Wno-misleading-indentation -fcompare-debug-second -O3 -D_NUITKA_STANDALONE_MODE -D_NUITKA_EXE_MODE -D_WIN32_WINNT=0x0601 -D__NUITKA_NO_ASSERT__ -D_NUITKA_WINMAIN_ENTRY_POINT -D_NUITKA_CONSTANTS_FROM_RESOURCE -D_NUITKA_FROZEN=155 -D_NUITKA_PLUGIN_MULTIPROCESSING_ENABLED=1 -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\zlib -IC:\Users\u1\CONDA~1\envs\yolo\include -I. -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\include -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\static_src -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\libbacktrace __constants.c
+"C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\ccache.exe" "C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe" -o __helpers.o -c -std=c11 -fvisibility=hidden -fwrapv -pipe -Wno-unused-but-set-variable -fpartial-inlining -ftrack-macro-expansion=0 -Wno-deprecated-declarations -fno-var-tracking -Wno-misleading-indentation -fcompare-debug-second -O3 -D_NUITKA_STANDALONE_MODE -D_NUITKA_EXE_MODE -D_WIN32_WINNT=0x0601 -D__NUITKA_NO_ASSERT__ -D_NUITKA_WINMAIN_ENTRY_POINT -D_NUITKA_CONSTANTS_FROM_RESOURCE -D_NUITKA_FROZEN=155 -D_NUITKA_PLUGIN_MULTIPROCESSING_ENABLED=1 -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\zlib -IC:\Users\u1\CONDA~1\envs\yolo\include -I. -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\include -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\static_src -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\libbacktrace __helpers.c
+"C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\ccache.exe" "C:\Users\u1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\gcc\x86_64\14.2.0posix-19.1.1-12.0.0-msvcrt-r2\mingw64\bin\gcc.exe" -o __loader.o -c -std=c11 -fvisibility=hidden -fwrapv -pipe -Wno-unused-but-set-variable -fpartial-inlining -ftrack-macro-expansion=0 -Wno-deprecated-declarations -fno-var-tracking -Wno-misleading-indentation -fcompare-debug-second -O3 -D_NUITKA_STANDALONE_MODE -D_NUITKA_EXE_MODE -D_WIN32_WINNT=0x0601 -D__NUITKA_NO_ASSERT__ -D_NUITKA_WINMAIN_ENTRY_POINT -D_NUITKA_CONSTANTS_FROM_RESOURCE -D_NUITKA_FROZEN=155 -D_NUITKA_PLUGIN_MULTIPROCESSING_ENABLED=1 -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\zlib -IC:\Users\u1\CONDA~1\envs\yolo\include -I. -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\include -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\static_src -IC:\Users\u1\CONDA~1\envs\yolo\Lib\SITE-P~1\nuitka\build\inline_copy\libbacktrace __loader.c
+
+scons: done building targets.
+Nuitka-Scons: Compiled 5033 C files using ccache.
+Nuitka-Scons: Cached C files (using ccache) with result 'cache miss': 5033
+Nuitka-Postprocessing: Adding 10 icon(s) from icon file './ui/icons/camera-ai-fill.ico'.
+Nuitka-Plugins:pyqt5: Including Qt plugins
+Nuitka-Plugins:pyqt5: 'iconengines,imageformats,mediaservice,platforms,platformthemes,printsupport,styles' below
+Nuitka-Plugins:pyqt5: 'PyQt5\qt-plugins'.
+Nuitka-Plugins:pyqt5: Found 2 files DLLs from 'OpenSSL' PyQt5 installation.
+Nuitka-Plugins:dll-files: Found 2 files DLLs from onnxruntime installation.
+Nuitka-Plugins:dll-files: Found 2 files DLLs from pyzbar installation.
+Nuitka-Plugins:dll-files: Found 22 files DLLs from torch installation.
+Nuitka-Plugins:data-files: Included data file 'PyQt5\Qt5\.keep_dir.txt' due to empty dir needed for 'PyQt5'.
+Nuitka-Plugins:data-files: Included data file 'PyQt5\Qt\.keep_dir.txt' due to empty dir needed for 'PyQt5'.
+Nuitka-Plugins:data-files: Included data file 'certifi\cacert.pem' due to package data for 'certifi'.
+Nuitka-Plugins:data-files: Included data file 'jaraco\text\Lorem ipsum.txt' due to package data for 'jaraco.text'.
+Nuitka-Plugins:matplotlib: Included 183 data files due to package data for 'matplotlib.
+Nuitka-Plugins:matplotlib: Included data file 'matplotlib\mpl-data\matplotlibrc' due to updated matplotlib config file
+Nuitka-Plugins:matplotlib: with backend to use.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\html.tpl' due to package data directory
+Nuitka-Plugins:data-files: 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\html_style.tpl' due to package data
+Nuitka-Plugins:data-files: directory 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\html_table.tpl' due to package data
+Nuitka-Plugins:data-files: directory 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\latex.tpl' due to package data directory
+Nuitka-Plugins:data-files: 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\latex_longtable.tpl' due to package data
+Nuitka-Plugins:data-files: directory 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\latex_table.tpl' due to package data
+Nuitka-Plugins:data-files: directory 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included data file 'pandas\io\formats\templates\string.tpl' due to package data directory
+Nuitka-Plugins:data-files: 'templates' for 'pandas.io.formats'.
+Nuitka-Plugins:data-files: Included 604 data files due to package data directory 'zoneinfo' for 'pytz'.
+Nuitka-Plugins:data-files: Included data file 'scipy\stats\_sobol_direction_numbers.npz' due to package data for
+Nuitka-Plugins:data-files: 'scipy'.
+Nuitka-Plugins:data-files: Included 8627 data files due to package data directory 'include' for 'torch'.
+Nuitka-Plugins:data-files: Included 604 data files due to package data directory '.' for 'tzdata.zoneinfo'.
+Nuitka: Keeping build directory 'out-mingw64\detect_main.build'.
+Nuitka: Successfully created 'E:\01luqiao\beam-detect\out-mingw64\detect_main.dist\detect_main.exe'.

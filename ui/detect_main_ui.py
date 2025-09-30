@@ -208,7 +208,6 @@ class Ui_MainWindow(object):
         self.vLayoutLogContainer.setContentsMargins(0, 0, 0, 0)
         self.vLayoutLogContainer.setSpacing(0)
 
-
         # 日志工具栏（折叠按钮 + 右侧控件）
         self.hLayoutLogTools = QtWidgets.QHBoxLayout()
         self.hLayoutLogTools.setContentsMargins(3, 3, 3, 3)
@@ -226,12 +225,10 @@ class Ui_MainWindow(object):
         # 右侧日志控件
         self.levelLabel = QtWidgets.QLabel("日志级别:")
         self.levelLabel.setObjectName("levelLabel")
-
         self.logLevelBox = QtWidgets.QComboBox()
         self.logLevelBox.addItems(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
         self.logLevelBox.setCurrentText("INFO")
         self.logLevelBox.setObjectName("logLevelBox")
-        
         self.btnClearLog = QtWidgets.QPushButton("清空日志")
         self.btnClearLog.setObjectName("btnClearLog")
 
@@ -242,30 +239,42 @@ class Ui_MainWindow(object):
         self.hLayoutLogTools.addWidget(self.logLevelBox)
         self.hLayoutLogTools.addWidget(self.btnClearLog)
 
-        # 把工具栏放在日志内容下方
+        # 工具栏加入容器
         self.vLayoutLogContainer.addLayout(self.hLayoutLogTools)
+
         # 日志输出内容
         self.logOutput = QtWidgets.QPlainTextEdit()
         self.logOutput.setReadOnly(True)
         self.logOutput.setStyleSheet("font-size: 18px; background-color: #F5F5F5; color: #000;")
+        self.logOutput.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+
+        # 设置日志输出最大高度
+        self.logOutput.setMaximumHeight(300)
+
         self.vLayoutLogContainer.addWidget(self.logOutput)
 
         # 添加到日志总布局
-        self.vLayoutLog.addWidget(self.logContainer, alignment=QtCore.Qt.AlignBottom)
+        self.vLayoutLog.addWidget(self.logContainer)
+
+        self.gridLayout_4.addWidget(self.groupLog, 1, 0, 1, 1)
+        self.gridLayout_4.setRowStretch(0, 1)  # 上半部分优先填充
+        self.gridLayout_4.setRowStretch(1, 0)  # 日志区不拉伸
 
         # 折叠/展开逻辑
         def toggle_log_content(checked):
-            self.logOutput.setVisible(checked)  # 隐藏/显示日志内容
+            self.logOutput.setVisible(checked)
             self.btnToggleLog.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
-            # 调整 gridLayout_4 行伸缩比例
             if checked:
-                self.gridLayout_4.setRowStretch(0, 3)  # 主区域占 3
-                self.gridLayout_4.setRowStretch(1, 1)  # 日志区域占 1
+                # 展开日志，高度自动但不超过最大 300px
+                self.gridLayout_4.setRowStretch(0, 1)  # 上半部分占满剩余空间
+                self.gridLayout_4.setRowStretch(1, 0)
             else:
-                self.gridLayout_4.setRowStretch(0, 4)  # 主区域占满
-                self.gridLayout_4.setRowStretch(1, 0)  # 日志区域只保留按钮高度
+                # 折叠日志，只显示按钮高度
+                self.gridLayout_4.setRowStretch(0, 1)
+                self.gridLayout_4.setRowStretch(1, 0)
 
         self.btnToggleLog.toggled.connect(toggle_log_content)
+
 
 
         self.gridLayout_4.addWidget(self.groupLog, 1, 0, 1, 1)
