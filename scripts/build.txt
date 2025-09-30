@@ -23,6 +23,8 @@ nuitka detect_main.py ^
   --plugin-enable=pyqt5 ^
   --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_videoio_ffmpeg*.dll=." ^
   --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_world*.dll=." ^
+  --include-package=ultralytics ^
+  --follow-import-to=ultralytics ^
   --follow-import-to=task,camera,config,db ^
   --nofollow-import-to=sqlalchemy.dialects.oracle ^
   --nofollow-import-to=sqlalchemy.dialects.sqlite ^
@@ -30,21 +32,35 @@ nuitka detect_main.py ^
   --output-dir=out ^
   --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
   --jobs=4 ^
-  --lto=no
+  --lto=no ^
+  --devel-recompile-c-only ^
+  --show-scons
 
 
+conda create -n yolo python=3.12.3 ^
+conda activate yolo ^
+conda install -c pytorch -c nvidia -c conda-forge pytorch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 pytorch-cuda=12.4 ultralytics=8.3.147 ^
+pip install -r requirements.txt ^
+conda install nuitka ^
+conda install zlib
+
+set INCLUDE=D:\Anaconda3\envs\yolo\Library\include;%INCLUDE% ^
+set LIB=D:\Anaconda3\envs\yolo\Library\lib;%LIB% ^
 nuitka detect_main.py ^
-    --standalone ^
-    --windows-console-mode=disable ^
-    --plugin-enable=pyqt5 ^
-    --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_videoio_ffmpeg*.dll=." ^
-    --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\opencv_world*.dll=." ^
-    --nofollow-import-to=sqlalchemy.dialects.oracle ^
-    --nofollow-import-to=sqlalchemy.dialects.sqlite ^
-    --nofollow-import-to=sympy.polys.polyquinticconst ^
-    --output-dir=out-mingw64 ^
-    --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
-    --jobs=4 ^
-    --lto=no ^
-    --mingw64
-
+   --standalone ^
+   --windows-console-mode=disable ^
+   --plugin-enable=pyqt5 ^
+   --include-plugin-files="D:\anaconda3\envs\yolo\Library\bin\zlib.dll=." ^
+   --include-package=ultralytics ^
+   --follow-import-to=ultralytics ^
+   --follow-import-to=task,camera,config,db ^
+   --nofollow-import-to=sqlalchemy.dialects.oracle ^
+   --nofollow-import-to=sqlalchemy.dialects.sqlite ^
+   --nofollow-import-to=sympy.polys.polyquinticconst ^
+   --output-dir=out-mingw64 ^
+   --windows-icon-from-ico=./ui/icons/camera-ai-fill.ico ^
+   --jobs=4 ^
+   --lto=no ^
+   --mingw64 ^
+   --devel-recompile-c-only ^
+   --show-scons

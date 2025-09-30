@@ -17,13 +17,21 @@ password = yaml_data['password']
 database = yaml_data['database']
 database_open = yaml_data['database_open']
 
-mysql_url = f"mysql+pymysql://{user}:{password}@{url}/{database}?charset=utf8"
-logging.info(f'mysql连接信息：{mysql_url}')
-# 创建数据库连接
-# engine = create_engine(f"mysql+pymysql://root:root123456@192.168.105.58:3306/ruoyi?charset=utf8")
-engine = create_engine(mysql_url)
-Session = sessionmaker(bind=engine)
-session = Session()
+engine = None
+SessionLocal = None
+session = None
+
+# ---------------- 初始化数据库 ----------------
+def init_database():
+    global engine, SessionLocal, session
+    if database_open:
+        mysql_url = f"mysql+pymysql://{user}:{password}@{url}/{database}?charset=utf8"
+        engine = create_engine(mysql_url, pool_pre_ping=True)
+        SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+        session = SessionLocal()  # 生成一个 session 实例
+        logging.info(f"数据库已连接: {mysql_url}")
+    else:
+        logging.info("未开启数据库连接，请检查 config/database.yaml 配置")
 
 
 def update_busi_beam_pic(data: BusiBeamPic):

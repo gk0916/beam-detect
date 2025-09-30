@@ -86,7 +86,6 @@ class StyledButton(QtWidgets.QPushButton):
         if self.isEnabled() and event.button() == QtCore.Qt.LeftButton:
             self.is_pressed = False
             self.setIconSize(QtCore.QSize(24, 24))
-            # 根据鼠标位置和启用状态设置颜色
             local_pos = self.mapFromGlobal(event.globalPos())
             if self.rect().contains(local_pos):
                 self.set_icon(self.hover_color)
@@ -197,83 +196,99 @@ class Ui_MainWindow(object):
 
         self.gridLayout_4.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
 
-        # ---------------- 日志输出 ----------------
-        self.groupLog = QtWidgets.QGroupBox(self.centralwidget)
-        self.groupLog.setTitle("日志输出")
-        self.groupLog.setObjectName("groupLog")
-        
+        # ---------------- 日志输出（可折叠） ----------------
+        self.groupLog = QtWidgets.QWidget(self.centralwidget)
         self.vLayoutLog = QtWidgets.QVBoxLayout(self.groupLog)
-        self.vLayoutLog.setContentsMargins(3, 0, 3, 3) 
-        self.vLayoutLog.setSpacing(3)
+        self.vLayoutLog.setContentsMargins(0, 0, 0, 0)
+        self.vLayoutLog.setSpacing(0)
 
-        # 日志工具栏
+        # 日志内容和工具栏容器
+        self.logContainer = QtWidgets.QWidget()
+        self.vLayoutLogContainer = QtWidgets.QVBoxLayout(self.logContainer)
+        self.vLayoutLogContainer.setContentsMargins(0, 0, 0, 0)
+        self.vLayoutLogContainer.setSpacing(0)
+
+
+        # 日志工具栏（折叠按钮 + 右侧控件）
         self.hLayoutLogTools = QtWidgets.QHBoxLayout()
-        self.hLayoutLogTools.setContentsMargins(0, 0, 0, 0)
+        self.hLayoutLogTools.setContentsMargins(3, 3, 3, 3)
         self.hLayoutLogTools.setSpacing(5)
-        self.hLayoutLogTools.addStretch()
 
-        # Label
+        # 折叠/展开按钮
+        self.btnToggleLog = QtWidgets.QToolButton()
+        self.btnToggleLog.setStyleSheet("QToolButton { border: none; font-size: 16px; }")
+        self.btnToggleLog.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.btnToggleLog.setArrowType(QtCore.Qt.DownArrow)  # 默认展开
+        self.btnToggleLog.setText(" 日志")
+        self.btnToggleLog.setCheckable(True)
+        self.btnToggleLog.setChecked(True)
+
+        # 右侧日志控件
         self.levelLabel = QtWidgets.QLabel("日志级别:")
         self.levelLabel.setObjectName("levelLabel")
-        self.hLayoutLogTools.addWidget(self.levelLabel, alignment=QtCore.Qt.AlignVCenter)
 
-        # 下拉框
         self.logLevelBox = QtWidgets.QComboBox()
         self.logLevelBox.addItems(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
         self.logLevelBox.setCurrentText("INFO")
         self.logLevelBox.setObjectName("logLevelBox")
-        self.hLayoutLogTools.addWidget(self.logLevelBox, alignment=QtCore.Qt.AlignVCenter)
-
-        # 清空日志按钮
+        
         self.btnClearLog = QtWidgets.QPushButton("清空日志")
         self.btnClearLog.setObjectName("btnClearLog")
-        self.hLayoutLogTools.addWidget(self.btnClearLog, alignment=QtCore.Qt.AlignVCenter)
-        
-        # self.hLayoutLogTools.addWidget(self.levelLabel, 0, QtCore.Qt.AlignVCenter)
-        # self.hLayoutLogTools.addWidget(self.logLevelBox, 0, QtCore.Qt.AlignVCenter)
-        # self.hLayoutLogTools.addWidget(self.btnClearLog, 0, QtCore.Qt.AlignVCenter)
-        
-        self.vLayoutLog.addLayout(self.hLayoutLogTools)
 
+        # 左右布局
+        self.hLayoutLogTools.addWidget(self.btnToggleLog, alignment=QtCore.Qt.AlignLeft)
+        self.hLayoutLogTools.addStretch()
+        self.hLayoutLogTools.addWidget(self.levelLabel)
+        self.hLayoutLogTools.addWidget(self.logLevelBox)
+        self.hLayoutLogTools.addWidget(self.btnClearLog)
 
-        # 日志输出区
-        self.logOutput = QtWidgets.QPlainTextEdit(self.groupLog)
+        # 把工具栏放在日志内容下方
+        self.vLayoutLogContainer.addLayout(self.hLayoutLogTools)
+        # 日志输出内容
+        self.logOutput = QtWidgets.QPlainTextEdit()
         self.logOutput.setReadOnly(True)
         self.logOutput.setStyleSheet("font-size: 18px; background-color: #F5F5F5; color: #000;")
-        
-        self.vLayoutLog.addWidget(self.logOutput)
+        self.vLayoutLogContainer.addWidget(self.logOutput)
+
+        # 添加到日志总布局
+        self.vLayoutLog.addWidget(self.logContainer, alignment=QtCore.Qt.AlignBottom)
+
+        # 折叠/展开逻辑
+        def toggle_log_content(checked):
+            self.logOutput.setVisible(checked)  # 隐藏/显示日志内容
+            self.btnToggleLog.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+            # 调整 gridLayout_4 行伸缩比例
+            if checked:
+                self.gridLayout_4.setRowStretch(0, 3)  # 主区域占 3
+                self.gridLayout_4.setRowStretch(1, 1)  # 日志区域占 1
+            else:
+                self.gridLayout_4.setRowStretch(0, 4)  # 主区域占满
+                self.gridLayout_4.setRowStretch(1, 0)  # 日志区域只保留按钮高度
+
+        self.btnToggleLog.toggled.connect(toggle_log_content)
+
 
         self.gridLayout_4.addWidget(self.groupLog, 1, 0, 1, 1)
-
-        # 设置上下伸缩比例：主区域 3，日志区域 1
         self.gridLayout_4.setRowStretch(0, 3)
         self.gridLayout_4.setRowStretch(1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
         # ---------------- 日志绑定 ----------------
-        os.makedirs("logs", exist_ok=True)
-
         self.log_handler = QtHandler()
         self.log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
         self.log_handler.log_signal.connect(self.append_log)
 
-        file_handler = logging.FileHandler("logs/app.log", encoding="utf-8")
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        # file_handler = logging.FileHandler("logs/app.log", encoding="utf-8")
+        # file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
-        logging.getLogger().addHandler(self.log_handler)   # 输出到 UI
-        logging.getLogger().addHandler(file_handler)       # 输出到文件
+        logging.getLogger().addHandler(self.log_handler)
+        # logging.getLogger().addHandler(file_handler)
         logging.getLogger().setLevel(logging.INFO)
 
         # 日志级别切换
         self.logLevelBox.currentTextChanged.connect(self.change_log_level)
-
-        # 清空日志
         self.btnClearLog.clicked.connect(self.clear_log)
-
-        # 状态栏
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        MainWindow.setStatusBar(self.statusbar)
 
         # 初始化控件状态
         self.ComboModels.setEnabled(True)
@@ -535,7 +550,7 @@ class Ui_MainWindow(object):
         self.groupDetect.setTitle(_translate("MainWindow", "图像检测"))
         self.groupResult.setTitle(_translate("MainWindow", "检测记录"))
         self.modelLabel.setText(_translate("MainWindow", "选择模型："))
-        self.groupLog.setTitle(_translate("MainWindow", "日志输出"))
+        # self.groupLog.setTitle(_translate("MainWindow", "日志输出"))
 
     def append_log(self, msg, level):
         """在日志窗口显示日志，不同级别不同颜色"""

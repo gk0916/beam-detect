@@ -14,6 +14,7 @@ from camera.MVSDK.IMVApi import *
 from camera.device import *
 from task.detect_image import init_model, result2Db
 import logging
+from db.dbService import init_database
 
 # # 获取选取设备信息的索引，通过[]之间的字符去解析
 # def TxtWrapBy(start_str, end, all):
@@ -246,6 +247,27 @@ if __name__ == "__main__":
 
         # ui.bnSaveImage.setEnabled(isOpen and isDetecting)
 
+    # 系统日志 app.log
+    os.makedirs("logs", exist_ok=True)
+    log_file = "logs/app.log"
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler(log_file, mode='w', encoding="utf-8"), 
+        ]
+    )
+
+    # ---------------- 全局异常捕获 ----------------
+    def global_exception_hook(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logging.error("系统异常", exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = global_exception_hook
+
     global cam
     cam = MvCamera()
     global nSelCamIndex
@@ -293,6 +315,7 @@ if __name__ == "__main__":
 
     mainWindow.show()
 
+    init_database()
     app.exec_()
 
     close_all_device()
