@@ -4,7 +4,6 @@ import wandb
 from wandb.integration.ultralytics import add_wandb_callback
 import os
 
-os.environ["WANDB_MODE"] = "online"
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
@@ -22,9 +21,11 @@ parser.add_argument('-t', '--tune', default=False)
 parser.add_argument('-r', '--use_ray', default=False)
 parser.add_argument('-p', '--patience', default=100,type=int)
 parser.add_argument('-dr', '--dropout', default=0.0,type=float)
+parser.add_argument('-wb', '--wandb', default='offline')
 
 args = parser.parse_args()
 
+os.environ["WANDB_MODE"] = args.wandb
 
  
 if __name__ == '__main__':
