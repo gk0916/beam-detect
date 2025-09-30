@@ -264,6 +264,14 @@ class Ui_MainWindow(object):
         def toggle_log_content(checked):
             self.logOutput.setVisible(checked)
             self.btnToggleLog.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+            if checked:
+                # 展开日志，高度自动但不超过最大 300px
+                self.gridLayout_4.setRowStretch(0, 1)  # 上半部分占满剩余空间
+                self.gridLayout_4.setRowStretch(1, 0)
+            else:
+                # 折叠日志，只显示按钮高度
+                self.gridLayout_4.setRowStretch(0, 1)
+                self.gridLayout_4.setRowStretch(1, 0)
 
         self.btnToggleLog.toggled.connect(toggle_log_content)
 
