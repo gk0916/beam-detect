@@ -223,8 +223,9 @@ if __name__ == "__main__":
 
     def list_models(model_path):
         all_models = []
+        allowed_exts = (".pt", ".onnx", ".engine", ".yaml") 
         for root,dirs,files in os.walk(model_path):
-            for file in list(filter((lambda x: x.lower().endswith('.pt')),files)):
+            for file in list(filter((lambda x: x.lower().endswith(allowed_exts)),files)):
                 all_models.append(file)
         return all_models
     
@@ -241,6 +242,7 @@ if __name__ == "__main__":
         ui.bnClose.setEnabled(isOpen and (not isDetecting))
 
         ui.ComboModels.setEnabled((not isOpen) or (not isDetecting))
+        ui.bnRefresh.setEnabled((not isOpen) or (not isDetecting))
         ui.bnStart.setEnabled(isOpen and (not isDetecting))
         ui.bnStop.setEnabled(isOpen and isDetecting)
         # ui.bnSoftwareTrigger.setEnabled(isDetecting and ui.radioTriggerMode.isChecked())

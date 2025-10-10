@@ -16,3 +16,5 @@ __pycache__/
 *.pyo
 *.pyd
 .python-version
+beam-detect-model/
+setup/

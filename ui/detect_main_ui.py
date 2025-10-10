@@ -4,7 +4,7 @@ import sys
 import logging
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QStandardItemModel, QIcon  
-from PyQt5.QtWidgets import QHeaderView
+from PyQt5.QtWidgets import QHeaderView, QToolButton
 from PyQt5.QtCore import pyqtSignal, QObject
 
 from .svg_icon import SvgIconProvider
@@ -151,11 +151,70 @@ class Ui_MainWindow(object):
         self.hLayoutTop = QtWidgets.QHBoxLayout()
         self.modelLabel = QtWidgets.QLabel(self.centralwidget)
         self.modelLabel.setFixedWidth(110)
-        self.ComboModels = QtWidgets.QComboBox(self.centralwidget)
-        self.ComboModels.setObjectName("comModels")
 
+        # 容器
+        self.comboRefreshWidget = QtWidgets.QWidget(self.centralwidget)
+        hLayoutComboRefresh = QtWidgets.QHBoxLayout(self.comboRefreshWidget)
+        hLayoutComboRefresh.setContentsMargins(0, 0, 0, 0)
+        hLayoutComboRefresh.setSpacing(0)
+
+        # 模型列表
+        self.ComboModels = QtWidgets.QComboBox(self.comboRefreshWidget)
+        self.ComboModels.setObjectName("comModels")
+        self.ComboModels.setStyleSheet(f"""
+            QComboBox {{
+                border: 2px solid #DEE2E6;
+                border-right: none;
+                border-top-right-radius: 0px;
+                border-top-left-radius: 10px;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 0px;
+                padding: 12px 16px;
+                background: white;
+                color: #495057;
+                font-size: 24px;
+                min-height: 42px;
+            }}
+        """)
+        self.ComboModels.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+
+        # 刷新按钮
+        self.bnRefresh = QtWidgets.QToolButton(self.comboRefreshWidget)
+        self.bnRefresh.setIcon(QIcon(icon_path("refresh")))
+        self.bnRefresh.setToolTip("刷新模型列表")
+        self.bnRefresh.setStyleSheet(f"""
+            QToolButton {{
+                border: 2px solid #DEE2E6;
+                border-left: none;
+                border-top-right-radius: 10px;
+                border-bottom-right-radius: 10px;
+                background: white;
+            }}
+              QToolButton:hover {{
+                background: #F1F3F5;
+            }}
+            QToolButton:pressed {{
+                background: #E9ECEF;
+            }}                      
+        """)
+        self.bnRefresh.setFixedWidth(50)
+        self.bnRefresh.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)  # 高度跟布局匹配
+        self.bnRefresh.setIconSize(QtCore.QSize(24, 24))
+
+        # 加入布局
+        hLayoutComboRefresh.addWidget(self.ComboModels)
+        hLayoutComboRefresh.addWidget(self.bnRefresh)
+
+        # 强制两者高度一致
+        self.comboRefreshWidget.setFixedHeight(self.ComboModels.sizeHint().height())
+
+        # 最后加到原来的 hLayoutTop
         self.hLayoutTop.addWidget(self.modelLabel)
-        self.hLayoutTop.addWidget(self.ComboModels, 1)
+        self.hLayoutTop.addWidget(self.comboRefreshWidget, 1)
+
+        # 刷新逻辑
+        self.bnRefresh.clicked.connect(self.refresh_models)
+
 
         # 第二行：Start + Stop
         self.hLayoutBottom = QtWidgets.QHBoxLayout()
@@ -301,6 +360,7 @@ class Ui_MainWindow(object):
 
         # 初始化控件状态
         self.ComboModels.setEnabled(True)
+        self.bnRefresh.setEnabled(True)
         self.bnOpen.setEnabled(False)
         self.bnClose.setEnabled(False)
         self.bnStart.setEnabled(False)
@@ -582,3 +642,24 @@ class Ui_MainWindow(object):
     def clear_log(self):
         """清空日志窗口"""
         self.logOutput.clear()
+
+    def refresh_models(self):
+        models_dir = "models"
+        if not os.path.exists(models_dir):
+            logging.error(f"模型目录不存在: {models_dir}")
+            self.ComboModels.clear()
+            return
+        
+        # 支持的文件类型
+        allowed_exts = (".pt", ".onnx", ".engine", ".yaml") 
+        files = [f for f in os.listdir(models_dir) if f.endswith(allowed_exts)]
+
+        # 更新 ComboBox
+        self.ComboModels.clear()
+        self.ComboModels.addItems(files)
+
+        if files:
+            logging.debug(f"找到模型: {files}")
+            self.ComboModels.setCurrentIndex(0)
+        else:
+            logging.error(f"{models_dir} 目录下没有文件")
