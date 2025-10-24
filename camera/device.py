@@ -303,10 +303,10 @@ class CameraDevice():
                 if not self.b_start_detecting:
                     # 显示图片
                     h, w, ch = cvImage.shape
-                    qt_img = QImage(cvImage, # 数据源
-                                h ,  # 宽度
-                                w,	# 高度
-                                ch * w, # 行字节数
+                    qt_img = QImage(cvImage.data,
+                                w,
+                                h,
+                                ch * w,
                                 QImage.Format_BGR888)
                     pic.setPixmap(QPixmap.fromImage(qt_img))
                     count = 0
@@ -320,7 +320,6 @@ class CameraDevice():
                     cv2.imencode('.jpg', cvImage)[1].tofile(fileName)
                     # self.image_queue.put((fileName,cvImage))
                     self.image_queue.put(fileName)
-                
                 # image = Image.fromarray(cvImage)  
                 # pic.setImage(cv2.cvtColor(cvImage,cv2.COLOR_BayerBG))
                 # pic.setImage(cvImage)
