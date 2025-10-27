@@ -16,6 +16,7 @@ from task.detect_image import detectFrame
 from camera.MVSDK.IMVApi import *
 import yaml
 import logging
+from queue import Empty
 
 device_dic = {'xy-01-01':'1面-1排',
               'xy-01-02':'1面-2排',
@@ -92,6 +93,9 @@ class CameraDevice():
         self.h_thread_handle_detect = None
         self.b_thread_closed_detect = False
         self.image_queue = JoinableQueue()
+        self.put_image = False
+        self.stop_grab_event = threading.Event()
+        self.stop_detect_event = threading.Event()
         
         # self.frame_rate = frame_rate
         # self.exposure_time = exposure_time
@@ -279,216 +283,238 @@ class CameraDevice():
         # cvImage = cv2.cvtColor(cvImage,cv2.COLOR_BGR2RGB)
         return cvImage
 
-    def getFrameThreadProc(self,winHandle):
-            frame = IMV_Frame()
-            if self.obj_cam.handle == None:
-                return IMV_INVALID_HANDLE
-            count = 0
-            while True:
-                ret = self.obj_cam.IMV_ExecuteCommandFeature("TriggerSoftware")
-                if ret != IMV_OK:
-                    logging.error(f"Execute TriggerSoftware failed! ErrorCode: {nRet}")
-                    continue
-                nRet = self.obj_cam.IMV_GetFrame(frame, 1000)
-                if IMV_OK != nRet:
-                    logging.error(f'get fram failed with errorcode[{nRet}]')
-                    # break
-                    continue
+    def getFrameThreadProc(self, winHandle):
+        frame = IMV_Frame()
+        if self.obj_cam.handle is None:
+            return IMV_INVALID_HANDLE
 
-                logging.info("Get frame blockId = [%d]" % frame.frameInfo.blockId)
-                # self.st_frame_info = frame.frameInfo
+        logging.info("Frame thread started.")
+        count = 0
+        while not self.stop_grab_event.is_set():
+            ret = self.obj_cam.IMV_ExecuteCommandFeature("TriggerSoftware")
+            if ret != IMV_OK:
+                logging.error(f"Execute TriggerSoftware failed! ErrorCode: {ret}")
+                time.sleep(0.1)
+                continue
 
-                pic = winHandle
-                cvImage = self.convertImageByCv(cam=self.obj_cam,frame=frame)
+            nRet = self.obj_cam.IMV_GetFrame(frame, 1000)
+            if IMV_OK != nRet:
+                logging.error(f'get frame failed with errorcode[{nRet}]')
+                # 不立即 break，继续重试
+                time.sleep(0.05)
+                continue
+
+            logging.info(f"Get frame blockId = [{frame.frameInfo.blockId}]")
+
+            cvImage = self.convertImageByCv(cam=self.obj_cam, frame=frame)
+            if cvImage is None:
+                logging.error("convertImageByCv returned None")
+            else:
+                # cvImage.shape -> (h, w, ch)
+                h, w, ch = cvImage.shape
+                # 当不检测时直接显示
                 if not self.b_start_detecting:
                     # 显示图片
-                    h, w, ch = cvImage.shape
-                    qt_img = QImage(cvImage.data,
-                                w,
-                                h,
-                                ch * w,
-                                QImage.Format_BGR888)
-                    pic.setPixmap(QPixmap.fromImage(qt_img))
+                    qt_img = QImage(cvImage.data, w, h, ch * w, QImage.Format_BGR888)
+                    winHandle.setPixmap(QPixmap.fromImage(qt_img))
                     count = 0
                 elif self.b_start_detecting and self.put_image:
                     # 保存图片，并加入待检测队列
-                    global current_job
                     count += 1
-                    deviceName = device_dic[self.m_userId.decode('utf-8')]
+                    try:
+                        deviceName = device_dic[self.m_userId.decode('utf-8')]
+                    except Exception:
+                        deviceName = str(self.m_userId)
                     fileName = f"{current_job}/{deviceName}-{count}张.jpg"
                     logging.debug(f'picture image: [{fileName}]')
+                    # 使用 imencode 并写入文件
                     cv2.imencode('.jpg', cvImage)[1].tofile(fileName)
-                    # self.image_queue.put((fileName,cvImage))
+                    # 只放文件名到队列，避免共享大型数组
                     self.image_queue.put(fileName)
-                # image = Image.fromarray(cvImage)  
-                # pic.setImage(cv2.cvtColor(cvImage,cv2.COLOR_BayerBG))
-                # pic.setImage(cvImage)
-                # pic.setImage(numpy.array(image))
-                # time.sleep(10)
-                nRet = self.obj_cam.IMV_ReleaseFrame(frame)
-                if IMV_OK != nRet:
-                    logging.error(f"Release frame failed! ErrorCode[{nRet}]")
-                
-                # 是否退出
-                if not self.b_start_grabbing:
-                    # if self.buf_save_image is not None:
-                    #     del self.buf_save_image
-                    break
-                time.sleep(2)
-            # return IMV_OK
 
-    def startGrabbing(self,winHandle):
-        if not self.obj_cam:
-            return IMV_ERROR
-        if not self.obj_cam.handle:
+            nRet = self.obj_cam.IMV_ReleaseFrame(frame)
+            if IMV_OK != nRet:
+                logging.error(f"Release frame failed! ErrorCode[{nRet}]")
+
+            # 检查是否应该退出（通过事件）
+            if self.stop_grab_event.is_set() or not self.b_start_grabbing:
+                break
+            # 适当 sleep，避免 100% 占用
+            time.sleep(0.02)
+
+        logging.info("Frame thread exiting.")
+        return IMV_OK
+
+    def startGrabbing(self, winHandle):
+        if not self.obj_cam or not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
-        
+
         if not self.b_start_grabbing and self.b_open_device:
-            # self.b_exit = False
             ret = self.obj_cam.IMV_StartGrabbing()
             if ret != IMV_OK:
                 logging.error(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
-            else:
-                logging.info(f"start grabbing camera[{self.m_index}] successfully!")
-                self.b_start_grabbing = True
-            # return ret
-        
+                return ret
+            logging.info(f"start grabbing camera[{self.m_index}] successfully!")
+            self.b_start_grabbing = True
+
+            # 清理退出事件，启动线程（非 daemon）
+            self.stop_grab_event.clear()
             try:
-                thread_id = self.m_index
-                self.h_thread_handle = threading.Thread(target=CameraDevice.getFrameThreadProc, args=(self, winHandle))
-                logging.debug(f'starting thread: {self.h_thread_handle}')
+                self.h_thread_handle = threading.Thread(target=self.getFrameThreadProc, args=(winHandle,))
+                # 不要把抓取线程设为 daemon（否则主线程退出时会被强制终止）
+                self.h_thread_handle.daemon = False
                 self.h_thread_handle.start()
                 self.b_thread_closed = True
             except Exception as e:
                 logging.error(f"error: unable to start thread with error [{e}]")
-        # return MV_E_CALLORDER
-        
+                return IMV_ERROR
 
-    def stopGrabbing(self):
-        if not self.obj_cam:
-            return IMV_ERROR
-        if not self.obj_cam.handle:
+        return IMV_OK
+
+    def stopGrabbing(self, timeout=2.0):
+        if not self.obj_cam or not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
-        
-        # self.b_start_grabbing = False
-        # self.b_exit = True
-        # return self.cam.IMV_StopGrabbing()
-    
 
         if self.b_start_grabbing and self.b_open_device:
-            # 退出线程
-            if self.b_thread_closed:
-                Stop_thread(self.h_thread_handle)
+            # 请求线程退出：通过事件而非强杀
+            if self.b_thread_closed and self.h_thread_handle is not None:
+                logging.debug("Signaling grab thread to stop...")
+                self.stop_grab_event.set()
+                # 等待线程退出
+                self.h_thread_handle.join(timeout=timeout)
+                if self.h_thread_handle.is_alive():
+                    logging.warning("grab thread did not exit within timeout")
                 self.b_thread_closed = False
+
             ret = self.obj_cam.IMV_StopGrabbing()
             if ret != 0:
                 logging.error(f"stop grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
                 return ret
             logging.info(f"stop grabbing camera[{self.m_index}] successfully!")
             self.b_start_grabbing = False
-            # self.b_exit = True
             return IMV_OK
         else:
-            IMV_E_CALLORDER                               = 0x80000003  # < \~chinese 函数调用顺序错误         \~english Function calling order error
+            IMV_E_CALLORDER = 0x80000003
             return IMV_E_CALLORDER
 
-    def detect(self,model,job,job_lock,job_results,winHandle):
+    # 检测线程：消费队列并处理图片
+    def detect(self, model, job, job_lock, job_results, winHandle):
         global current_job
         global current_device_results
         current_job = job
+        logging.info("Detect thread started.")
         current_device_results = []
-        
-        while True:
-            image = self.image_queue.get()
-            logging.debug(f'detect  image: [{image}]')
-            # cv2.imencode('.jpg', image[1])[1].tofile(image[0])
-            # results = detectFrame(model,job,image[0])
-            results = detectFrame(model,job,image)
+
+        while not self.stop_detect_event.is_set() and self.b_start_detecting:
+            try:
+                # 使用 timeout 防止在退出时永久阻塞
+                image_path = self.image_queue.get(timeout=1.0)
+            except Empty:
+                continue
+
+            if image_path is None:
+                logging.debug("Detect thread received sentinel None, exiting loop...")
+                self.image_queue.task_done()
+                break
+
+            logging.debug(f'detect  image: [{image_path}]')
+            try:
+                results = detectFrame(model, job, image_path)
+            except Exception as e:
+                logging.exception(f"detectFrame failed: {e}")
+                self.image_queue.task_done()
+                continue
+
             current_device_results.extend(results)
 
-            # for result in results:
-            plot_result = results[0].plot()
+            # 绘图并显示（注意 QImage 参数顺序）
+            try:
+                plot_result = results[0].plot()
+                h, w, ch = plot_result.shape
+                qt_img = QImage(plot_result.data, w, h, ch * w, QImage.Format_BGR888)
+                winHandle.setPixmap(QPixmap.fromImage(qt_img))
+            except Exception as e:
+                logging.exception(f"plot/display failed: {e}")
 
-            pic = winHandle
-            h, w, ch = plot_result.shape
-            qt_img = QImage(plot_result, # 数据源
-                        h ,  # 宽度
-                        w,	# 高度
-                        ch * w, # 行字节数
-                        QImage.Format_BGR888)
-            pic.setPixmap(QPixmap.fromImage(qt_img))
-            # 发送当前图像已检测信号
             self.image_queue.task_done()
-            # # 等待4s测试消费速度小于生产速度的情景
-            # time.sleep(4)
 
-            # 是否退出
-            if not self.b_start_detecting:
-                # if self.buf_save_image is not None:
-                #     del self.buf_save_image
-                self.b_start_detecting = False
-                break
-        # return IMV_OK
+        logging.info("Detect thread exiting.")
+        return IMV_OK
 
-
-    def startDetecting(self,model,job,job_lock,job_results,winHandle):
-        if not self.obj_cam:
-            return IMV_ERROR
-        if not self.obj_cam.handle:
+    def startDetecting(self, model, job, job_lock, job_results, winHandle):
+        if not self.obj_cam or not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
-        
+
         if not self.b_start_detecting and self.b_start_grabbing:
-            # self.b_exit = False
-            # ret = self.obj_cam.IMV_StartGrabbing()
-            # if ret != IMV_OK:
-            #     logging.error(f"start grabbing camera[{self.m_index}] failed with errorcode [{ret}]!")
-            # else:
-            #     logging.info(f"start grabbing camera[{self.m_index}] successfully!")
-            #     self.b_start_grabbing = True
-            # # return ret
             self.b_start_detecting = True
             self.put_image = True
+            self.stop_detect_event.clear()
             try:
-                thread_id = self.m_index
-                self.h_thread_handle_detect = threading.Thread(target=CameraDevice.detect, args=(self, model, job, job_lock, job_results, winHandle))
-                logging.debug(f'starting thread: {self.h_thread_handle_detect}')
+                self.h_thread_handle_detect = threading.Thread(
+                    target=self.detect,
+                    args=(model, job, job_lock, job_results, winHandle)
+                )
+                self.h_thread_handle_detect.daemon = False
                 self.h_thread_handle_detect.start()
                 self.b_thread_closed_detect = True
             except Exception as e:
-                logging.error(f"error: unable to start thread with error [{e}]")
-        
-        pass
-    
-    def stopDetecting(self,job,job_lock,job_results,winHandle):
-        if not self.obj_cam:
-            return IMV_ERROR
-        if not self.obj_cam.handle:
+                logging.error(f"error: unable to start detect thread with error [{e}]")
+                return IMV_ERROR
+
+        return IMV_OK
+
+    def stopDetecting(self, job, job_lock, job_results, winHandle, timeout=3.0):
+        if not self.obj_cam or not self.obj_cam.handle:
             return IMV_INVALID_HANDLE
-    
+
         if self.b_start_detecting and self.b_start_grabbing:
+
+            # 停止继续放图
             self.put_image = False
             logging.info(f'---------------------本次检测任务停止中----------------------------')
+
+            # 等待队列被消费完
             while not self.image_queue.empty():
                 logging.info(f'剩余待检测图像：{self.image_queue.qsize()}张，等待本次检测完成..................')
-                time.sleep(2)
-                continue
-            # 阻塞等待队列中所有图像检测完成
-            self.image_queue.join()
-            # 退出线程
+                time.sleep(1)
+
+            # 使用 join() 等待 detect() 完成所有 task_done
+            logging.debug("Waiting for image_queue.join()...")
+            try:
+                self.image_queue.join()
+            except Exception:
+                pass
+
+            # 发出线程退出信号
+            logging.debug("Signaling detect thread to stop...")
+            self.b_start_detecting = False
+            self.stop_detect_event.set()
+
+            # 放哨兵，让 detect() 从 queue.get() 退出
+            try:
+                self.image_queue.put_nowait(None)
+            except Exception:
+                pass
+
+            # 等线程退出
+            if self.b_thread_closed_detect and self.h_thread_handle_detect is not None:
+                self.h_thread_handle_detect.join(timeout=timeout)
+                if self.h_thread_handle_detect.is_alive():
+                    logging.warning("detect thread did not exit within timeout")
+                self.b_thread_closed_detect = False
+
+            # 将结果汇总回 job_results
             logging.info(f'---------------------本次检测任务完成------------------------------')
             job_lock.acquire()
             job_results.extend(current_device_results)
             job_lock.release()
-            # self.put_image = False
-            if self.b_thread_closed_detect:
-                Stop_thread(self.h_thread_handle_detect)
-                self.b_thread_closed_detect = False
-            self.b_start_detecting = False
-            # self.b_exit = True
+
             return IMV_OK
+
         else:
-            IMV_E_CALLORDER                               = 0x80000003  # < \~chinese 函数调用顺序错误         \~english Function calling order error
+            IMV_E_CALLORDER = 0x80000003
             return IMV_E_CALLORDER
+
 
     
     def stopGrabbingCallback(self):
@@ -497,6 +523,19 @@ class CameraDevice():
 
         return self.cam.IMV_StopGrabbing()
 
+    def onGetFrame(pFrame,pUser):
+        if pFrame == None:
+            logging.warning("pFrame is None!")
+            return
+        Frame = cast(pFrame, POINTER(IMV_Frame)).contents
+
+        logging.info(f"Get frame blockID = {Frame.frameInfo.blockId}")
+        return
+    
+    pFrame = POINTER(IMV_Frame)
+    FrameInfoCallBack = eval('CFUNCTYPE')(None, pFrame, c_void_p)
+    CALL_BACK_FUN = FrameInfoCallBack(onGetFrame)
+    
     def startGrabbingCallback(self):
         if not self.cam.handle:
             return IMV_INVALID_HANDLE
@@ -507,19 +546,8 @@ class CameraDevice():
 
         return self.cam.IMV_StartGrabbing()
 
-    pFrame = POINTER(IMV_Frame)
-    FrameInfoCallBack = eval('CFUNCTYPE')(None, pFrame, c_void_p)
 
-    def onGetFrame(pFrame,pUser):
-        if pFrame == None:
-            logging.warning("pFrame is None!")
-            return
-        Frame = cast(pFrame, POINTER(IMV_Frame)).contents
 
-        logging.info(f"Get frame blockID = {Frame.frameInfo.blockId}")
-        return
-
-    CALL_BACK_FUN = FrameInfoCallBack(onGetFrame)
     
     # def deviceInfo(self):
     #     index = self.m_index
