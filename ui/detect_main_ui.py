@@ -344,7 +344,7 @@ class Ui_MainWindow(object):
 
         # ---------------- 日志绑定 ----------------
         self.log_handler = QtHandler()
-        self.log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        self.log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"))
         self.log_handler.log_signal.connect(self.append_log)
 
         # file_handler = logging.FileHandler("logs/app.log", encoding="utf-8")

@@ -41,7 +41,7 @@ conda create -n yolo python=3.12.3 ^
 conda activate yolo ^
 conda install -c pytorch -c nvidia -c conda-forge pytorch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 pytorch-cuda=12.4 ultralytics=8.3.147 ^
 pip install -r requirements.txt ^
-conda install nuitka ^
+conda install nuitka==2.7.16 ^
 conda install zlib
 
 set INCLUDE=D:\Anaconda3\envs\yolo\Library\include;%INCLUDE% ^
